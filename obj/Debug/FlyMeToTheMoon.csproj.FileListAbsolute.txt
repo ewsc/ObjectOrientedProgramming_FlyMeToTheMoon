@@ -1,0 +1,11 @@
+C:\Users\alamo\RiderProjects\FlyMeToTheMoon\FlyMeToTheMoon\bin\Debug\FlyMeToTheMoon.exe.config
+C:\Users\alamo\RiderProjects\FlyMeToTheMoon\FlyMeToTheMoon\bin\Debug\FlyMeToTheMoon.exe
+C:\Users\alamo\RiderProjects\FlyMeToTheMoon\FlyMeToTheMoon\bin\Debug\FlyMeToTheMoon.pdb
+C:\Users\alamo\RiderProjects\FlyMeToTheMoon\FlyMeToTheMoon\obj\Debug\FlyMeToTheMoon.csproj.AssemblyReference.cache
+C:\Users\alamo\RiderProjects\FlyMeToTheMoon\FlyMeToTheMoon\obj\Debug\FlyMeToTheMoon.csproj.SuggestedBindingRedirects.cache
+C:\Users\alamo\RiderProjects\FlyMeToTheMoon\FlyMeToTheMoon\obj\Debug\FlyMeToTheMoon.Properties.Resources.resources
+C:\Users\alamo\RiderProjects\FlyMeToTheMoon\FlyMeToTheMoon\obj\Debug\FlyMeToTheMoon.csproj.GenerateResource.cache
+C:\Users\alamo\RiderProjects\FlyMeToTheMoon\FlyMeToTheMoon\obj\Debug\FlyMeToTheMoon.csproj.CoreCompileInputs.cache
+C:\Users\alamo\RiderProjects\FlyMeToTheMoon\FlyMeToTheMoon\obj\Debug\FlyMeToTheMoon.exe
+C:\Users\alamo\RiderProjects\FlyMeToTheMoon\FlyMeToTheMoon\obj\Debug\FlyMeToTheMoon.pdb
+C:\Users\alamo\RiderProjects\FlyMeToTheMoon\FlyMeToTheMoon\obj\Debug\FlyMeToTheMoon.GameField.resources
