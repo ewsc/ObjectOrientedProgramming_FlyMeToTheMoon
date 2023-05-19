@@ -56,7 +56,6 @@
             this.DoubleBuffered = true;
             this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.Fixed3D;
             this.Name = "GameField";
-            this.KeyDown += new System.Windows.Forms.KeyEventHandler(this.GameField_KeyDown);
             this.ResumeLayout(false);
         }
 

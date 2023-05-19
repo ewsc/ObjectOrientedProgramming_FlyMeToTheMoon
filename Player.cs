@@ -3,6 +3,7 @@
     public class Player : DrawObject
     {
         protected int HighScore;
+        protected int SmHighScore;
         protected int Health;
 
         public void SetHighScore(int value)
@@ -17,7 +18,11 @@
 
         public void IncHighScore(int incValue)
         {
-            HighScore += incValue;
+            SmHighScore += incValue;
+            if (SmHighScore > 50) {
+                HighScore += 10;
+                SmHighScore = 0;
+            }
         }
     }
 }

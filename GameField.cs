@@ -1,11 +1,15 @@
 ﻿using System;
 using System.Drawing;
+using System.Runtime.InteropServices;
 using System.Windows.Forms;
 
 namespace FlyMeToTheMoon
 {
     public partial class GameField : Form
     {
+        [DllImport("user32.dll")]
+        static extern short GetAsyncKeyState(int key);
+        
         private const string Resources = "../../resources/";
         private const int MoveSize = 3;
 
@@ -35,23 +39,27 @@ namespace FlyMeToTheMoon
         
         private void Timer_Tick(object sender, EventArgs e)
         {
+            bool rightKeyIsPressed = GetAsyncKeyState(Convert.ToInt32(Keys.D)) != 0;
+            bool leftKeyIsPressed = GetAsyncKeyState(Convert.ToInt32(Keys.A)) != 0;
+
+            if (rightKeyIsPressed)
+            {
+                if (_rocket.CheckWorldBorders(Width, MoveSize, true)) { 
+                    _rocket.IncX(MoveSize);
+                }         
+            }
+            
+            else if (leftKeyIsPressed)
+            {
+                if (_rocket.CheckWorldBorders(Size.Width, MoveSize, false))
+                {
+                    _rocket.DecX(MoveSize);
+                }    
+            }
+            
             _rocket.IncHighScore(1);
             BackgroundImage = DrawBackground();
             SetHigh();
-        }
-
-        private void GameField_KeyDown(object sender, KeyEventArgs e)
-        {
-            switch (e.KeyCode)
-            {
-                case Keys.D:
-                    
-                    _rocket.IncX(MoveSize);
-                    break;
-                case Keys.A:
-                    _rocket.DecX(MoveSize);   
-                    break;
-            }
         }
     }
 }
