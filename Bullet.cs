@@ -1,6 +1,6 @@
 ﻿namespace FlyMeToTheMoon
 {
-    public class Bullet
+    public class Bullet : DrawObject
     {
         
     }

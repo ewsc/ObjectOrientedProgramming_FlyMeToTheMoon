@@ -10,12 +10,17 @@ namespace FlyMeToTheMoon
         protected int Height;
         protected bool IsDrawing;
 
-        public void SetDrawingStatus()
+        public void SetDrawingStatus(bool drawingStatus)
         {
-            IsDrawing = true;
+            IsDrawing = drawingStatus;
         }
 
-        public void SetWidhtHeight(int width, int height)
+        public bool GetDrawingStatus()
+        {
+            return IsDrawing;
+        }
+
+        public void SetWidthHeight(int width, int height)
         {
             Height = height;
             Width = width;
@@ -44,6 +49,11 @@ namespace FlyMeToTheMoon
             PosX -= decX;
         }
         
+        public void DecY(int decY)
+        {
+            PosY -= decY;
+        }
+        
         public int GetWidth()
         {
             return Width;
@@ -59,7 +69,7 @@ namespace FlyMeToTheMoon
             return PosY;
         }
 
-        public void setPosition(int posX, int posY)
+        public void SetPosition(int posX, int posY)
         {
             PosX = posX;
             PosY = posY;
