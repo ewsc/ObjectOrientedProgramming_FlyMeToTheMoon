@@ -5,6 +5,38 @@
         protected int HighScore;
         protected int SmHighScore;
         protected int Health;
+        protected int UsedBullets;
+        protected int Hits;
+
+        public void SetUsedBullets(int value)
+        {
+            UsedBullets = value;
+        }
+        
+        public void IncUsedBullets(int value)
+        {
+            UsedBullets += value;
+        }
+
+        public int GetUsedBullets()
+        {
+            return UsedBullets;
+        }
+        
+        public void SetHits(int value)
+        {
+            Hits = value;
+        }
+        
+        public void IncHits(int value)
+        {
+            Hits += value;
+        }
+
+        public int GetHits()
+        {
+            return Hits;
+        }
 
         public void SetHighScore(int value)
         {

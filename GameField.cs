@@ -12,12 +12,12 @@ namespace FlyMeToTheMoon
         private static extern short GetAsyncKeyState(int key);
         private const string Resources = "../../resources/";
         private const int MoveSize = 5;
-        private const int BulletMoveSize = 6;
-        private const int AsteroidMoveSize = 2;
+        private const int BulletMoveSize = 5;
+        private const int AsteroidMoveSize = 3;
         private const int BulletsAmount = 15;
         private const int AsteroidsAmount = 25;
-        private const int FireRate = 6; // MIN=4
-        private const int SpawnRate = 30;
+        private const int FireRate = 12; // MIN=4
+        private const int SpawnRate = 20;
         private const int MaxAsteroidRow = 3;
         private const int HealthDecRate = 20;
 
@@ -26,6 +26,7 @@ namespace FlyMeToTheMoon
         private readonly Player _rocket = new Player();
         private int _lastFired;
         private int _lastSpawned;
+        private readonly bool _drawHitboxes = true;
         public GameField()
         {
             InitializeComponent();
@@ -33,7 +34,14 @@ namespace FlyMeToTheMoon
             _rocket.SetPosition(Width / 2 + _rocket.GetWidth(), 300);
             _rocket.SetHighScore(0);
             _rocket.SetHeath(100);
+            _rocket.SetUsedBullets(0);
+            _rocket.SetHits(0);
+            label1.Text = "SCORE: " + _rocket.GetHighScore();
             label2.Text = "HEALTH: " + _rocket.GetHealth();
+            label3.Text = "BULLETS USED: " + _rocket.GetUsedBullets();
+            label4.Text = "HITS: " + _rocket.GetHits();
+            DateTime currentDateTime = DateTime.Now;
+            label5.Text = "TIME: " + currentDateTime;
             InitBullets();
             InitAsteroids();
         }
@@ -73,10 +81,14 @@ namespace FlyMeToTheMoon
             
             var p = new Point(_rocket.GetX(), _rocket.GetY()); 
             g.DrawImage(actor, p);
-            var actorRect = new Rectangle(_rocket.GetX(), _rocket.GetY(), _rocket.GetWidth(), _rocket.GetHeight());
-            var actorPen = new Pen(Brushes.DeepSkyBlue);
-            actorPen.Width = 1.0F;
-            g.DrawRectangle(actorPen, actorRect);
+
+            if (_drawHitboxes)
+            {
+                var actorRect = new Rectangle(_rocket.GetX(), _rocket.GetY(), _rocket.GetWidth(), _rocket.GetHeight());
+                var actorPen = new Pen(Brushes.DeepSkyBlue);
+                actorPen.Width = 1.0F;
+                g.DrawRectangle(actorPen, actorRect);
+            }
 
             for (var i = 0; i < BulletsAmount; i++)
             {
@@ -97,11 +109,15 @@ namespace FlyMeToTheMoon
                     var asteroid = Image.FromFile(Resources + "asteroid32.png");
                     var point = new Point(_asteroids[i].GetX(), _asteroids[i].GetY());
                     g.DrawImage(asteroid, point);
-                    
-                    var asteroidRect = new Rectangle(_asteroids[i].GetX(), _asteroids[i].GetY(), _asteroids[i].GetWidth(), _asteroids[i].GetHeight());
-                    var asteroidPed = new Pen(Brushes.Red);
-                    asteroidPed.Width = 1.0F;
-                    g.DrawRectangle(asteroidPed, asteroidRect);
+
+                    if (_drawHitboxes)
+                    {
+                        var asteroidRect = new Rectangle(_asteroids[i].GetX(), _asteroids[i].GetY(),
+                            _asteroids[i].GetWidth(), _asteroids[i].GetHeight());
+                        var asteroidPed = new Pen(Brushes.Red);
+                        asteroidPed.Width = 1.0F;
+                        g.DrawRectangle(asteroidPed, asteroidRect);
+                    }
                 }
             }
             
@@ -129,7 +145,7 @@ namespace FlyMeToTheMoon
             
             if (rightKeyIsPressed)
             {
-                if (_rocket.CheckWorldBorders(Width + 152, MoveSize, true)) { 
+                if (_rocket.CheckWorldBorders(810, MoveSize, true)) { 
                     _rocket.IncX(MoveSize);
                 }         
             }
@@ -143,6 +159,8 @@ namespace FlyMeToTheMoon
             if (spaceKeyIsPressed && _lastFired > FireRate)
             {
                 _lastFired = 0;
+                _rocket.IncUsedBullets(1);
+                label3.Text = "BULLETS: " + _rocket.GetUsedBullets();
                 FireRocket();
             }
         }
@@ -184,8 +202,7 @@ namespace FlyMeToTheMoon
             List<int> asteroidSpawnPoints = new List<int>();
             for (var i = 0; i < rowSize; i++)
             {
-                var random = new Random();
-                var position = random.Next(10, Width + 150);
+                var position = rand.Next(10, Width + 130);
                 asteroidSpawnPoints.Add(position);
             }
             var count = 0;
@@ -239,6 +256,9 @@ namespace FlyMeToTheMoon
                             {
                                 _asteroids[j].SetDrawingStatus(false);
                                 _bullets[i].SetDrawingStatus(false);
+                                _rocket.IncHighScore(50);
+                                _rocket.IncHits(1);
+                                label4.Text = "HITS: " + _rocket.GetHits();
                             }      
                         }   
                     }
@@ -264,6 +284,12 @@ namespace FlyMeToTheMoon
                 }
             }
         }
+
+        private Image DrawFinalBackground()
+        {
+            var back = Image.FromFile(Resources + "back_fin.png");
+            return back;
+        }
         
         private void Timer_Tick(object sender, EventArgs e)
         {
@@ -285,6 +311,14 @@ namespace FlyMeToTheMoon
             MoveAsteroids();
             BackgroundImage = DrawBackground();
             SetHigh();
+            DateTime currentDateTime = DateTime.Now;
+            string formattedDateTime = currentDateTime.ToString("HH:mm:ss");
+            label5.Text = "TIME: " + formattedDateTime;
+            if (_rocket.GetHealth() <= 0)
+            {
+                Timer.Enabled = false;
+                BackgroundImage = DrawFinalBackground();
+            }
         }
     }
 }
