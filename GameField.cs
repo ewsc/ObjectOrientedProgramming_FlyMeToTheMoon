@@ -40,7 +40,7 @@ namespace FlyMeToTheMoon
             label2.Text = "HEALTH: " + _rocket.GetHealth();
             label3.Text = "BULLETS USED: " + _rocket.GetUsedBullets();
             label4.Text = "HITS: " + _rocket.GetHits();
-            DateTime currentDateTime = DateTime.Now;
+            var currentDateTime = DateTime.Now;
             label5.Text = "TIME: " + currentDateTime;
             InitBullets();
             InitAsteroids();
@@ -145,7 +145,7 @@ namespace FlyMeToTheMoon
             
             if (rightKeyIsPressed)
             {
-                if (_rocket.CheckWorldBorders(810, MoveSize, true)) { 
+                if (_rocket.CheckWorldBorders(Size.Width - 29, MoveSize, true)) { 
                     _rocket.IncX(MoveSize);
                 }         
             }
@@ -202,7 +202,7 @@ namespace FlyMeToTheMoon
             List<int> asteroidSpawnPoints = new List<int>();
             for (var i = 0; i < rowSize; i++)
             {
-                var position = rand.Next(10, Width + 130);
+                var position = rand.Next(10, Width - 60);
                 asteroidSpawnPoints.Add(position);
             }
             var count = 0;
@@ -280,6 +280,11 @@ namespace FlyMeToTheMoon
                         _asteroids[i].SetDrawingStatus(false);
                         _rocket.DecHealth(HealthDecRate);
                         label2.Text = "HEALTH: " + _rocket.GetHealth();
+                        if (_rocket.GetHealth() <= 20)
+                        {
+                            label2.ForeColor = Color.Red;
+                            label2.Text = "HEALTH: " + _rocket.GetHealth();
+                        }
                     }    
                 }
             }
