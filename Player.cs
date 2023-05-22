@@ -10,6 +10,21 @@
         {
             HighScore = value;
         }
+
+        public void SetHeath(int value)
+        {
+            Health = value;
+        }
+
+        public void DecHealth(int value)
+        {
+            Health -= value;
+        }
+
+        public int GetHealth()
+        {
+            return Health;
+        }
         
         public int GetHighScore()
         {

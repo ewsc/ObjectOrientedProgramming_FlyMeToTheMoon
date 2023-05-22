@@ -44,6 +44,11 @@ namespace FlyMeToTheMoon
             PosX += incX;
         }
         
+        public void IncY(int incY)
+        {
+            PosY += incY;
+        }
+        
         public void DecX(int decX)
         {
             PosX -= decX;
@@ -57,6 +62,11 @@ namespace FlyMeToTheMoon
         public int GetWidth()
         {
             return Width;
+        }
+        
+        public int GetHeight()
+        {
+            return Height;
         }
 
         public int GetX()
