@@ -11,48 +11,80 @@ namespace FlyMeToTheMoon
         [DllImport("user32.dll")]
         private static extern short GetAsyncKeyState(int key);
         private const string Resources = "../../resources/";
-        private const int MoveSize = 5;
-        private const int BulletMoveSize = 5;
+        
+        private const int MoveSize = 9;
+        private const int BulletMoveSize = 7;
         private const int AsteroidMoveSize = 3;
-        private const int BulletsAmount = 15;
+        private const int BulletsAmount = 20;
         private const int AsteroidsAmount = 25;
-        private const int FireRate = 12; // MIN=4
+        private const int FireRate = 8; // MIN=4
         private const int SpawnRate = 20;
         private const int MaxAsteroidRow = 3;
         private const int HealthDecRate = 20;
+        private const bool DrawHitboxes = false;
+        private const int ExplosionTimer = 2;
+        private const int MaxExplosionTime = 100;
 
         private readonly List<Bullet> _bullets = new List<Bullet>();
         private readonly List<Asteroid> _asteroids = new List<Asteroid>();
         private readonly Player _rocket = new Player();
         private int _lastFired;
         private int _lastSpawned;
-        private readonly bool _drawHitboxes = true;
+        private static System.Timers.Timer _aTimer;
+        
         public GameField()
         {
+            FormBorderStyle = FormBorderStyle.None;
+            WindowState = FormWindowState.Maximized;
             InitializeComponent();
-            _rocket.SetWidthHeight(26, 40);
-            _rocket.SetPosition(Width / 2 + _rocket.GetWidth(), 300);
+            
+            Width = Screen.PrimaryScreen.Bounds.Width;
+            PlaceLabels();
+
+            _aTimer = new System.Timers.Timer(30);
+            _aTimer.Elapsed += OnTimedEvent;
+            _aTimer.AutoReset = true;
+            _aTimer.Enabled = true;
+            
+            _rocket.SetWidthHeight(56, 128);
+            _rocket.SetPosition((Width / 2) - _rocket.GetWidth(), 4 * (Height / 3));
             _rocket.SetHighScore(0);
             _rocket.SetHeath(100);
             _rocket.SetUsedBullets(0);
             _rocket.SetHits(0);
-            label1.Text = "SCORE: " + _rocket.GetHighScore();
-            label2.Text = "HEALTH: " + _rocket.GetHealth();
-            label3.Text = "BULLETS USED: " + _rocket.GetUsedBullets();
-            label4.Text = "HITS: " + _rocket.GetHits();
+            _rocket.IsMovingLeft = false;
+            _rocket.IsMovingRight = false;
+            
+            label1.Text = @"SCORE: " + _rocket.GetHighScore();
+            label2.Text = @"HEALTH: " + _rocket.GetHealth();
+            label3.Text = @"BULLETS: " + _rocket.GetUsedBullets();
+            label4.Text = @"HITS: " + _rocket.GetHits();
             var currentDateTime = DateTime.Now;
-            label5.Text = "TIME: " + currentDateTime;
+            label5.Text = @"TIME: " + currentDateTime;
+            
             InitBullets();
             InitAsteroids();
         }
-        
+
+        private void PlaceLabels()
+        {
+            var size = Width / 5;
+            
+            label1.Left = size * 0;
+            label2.Left = size * 1;
+            label3.Left = size * 2;
+            label4.Left = size * 3;
+            label5.Left = size * 4;
+        }
+
         private void InitAsteroids()
         {
             for (var i = 0; i < AsteroidsAmount; i++)
             {
                 var tempAsteroid = new Asteroid();
                 tempAsteroid.SetDrawingStatus(false);
-                tempAsteroid.SetWidthHeight(32, 38);
+                tempAsteroid.SetWidthHeight(64, 64);
+                tempAsteroid.SetExplosionStatus(false);
                 _asteroids.Add(tempAsteroid);
             }    
         }
@@ -63,26 +95,38 @@ namespace FlyMeToTheMoon
             {
                 var tempBullet = new Bullet();
                 tempBullet.SetDrawingStatus(false);
-                tempBullet.SetWidthHeight(16, 16);
+                tempBullet.SetWidthHeight(10, 32);
                 _bullets.Add(tempBullet);
             }    
         }
 
         private void SetHigh()
         {
-            label1.Text = "SCORE: " + _rocket.GetHighScore();
+            label1.Text = @"SCORE: " + _rocket.GetHighScore();
         }
 
         private Image DrawBackground()
         {
-            var back = Image.FromFile(Resources + "back.png");
-            var actor = Image.FromFile(Resources + "rocket.png");
-            var g = Graphics.FromImage(back);
+            var back = Image.FromFile(Resources + "back.jpg");
+            Image actor;
+            if (_rocket.IsMovingRight && !_rocket.IsMovingLeft)
+            {
+                actor = Image.FromFile(Resources + "rocket_right.png");    
+            }
+            else if (_rocket.IsMovingLeft && !_rocket.IsMovingRight)
+            {
+                actor = Image.FromFile(Resources + "rocket_left.png");        
+            }
+            else
+            {
+                actor = Image.FromFile(Resources + "rocket.png");      
+            }
             
+            var g = Graphics.FromImage(back);
             var p = new Point(_rocket.GetX(), _rocket.GetY()); 
             g.DrawImage(actor, p);
 
-            if (_drawHitboxes)
+            if (DrawHitboxes)
             {
                 var actorRect = new Rectangle(_rocket.GetX(), _rocket.GetY(), _rocket.GetWidth(), _rocket.GetHeight());
                 var actorPen = new Pen(Brushes.DeepSkyBlue);
@@ -103,14 +147,14 @@ namespace FlyMeToTheMoon
             
             for (var i = 0; i < AsteroidsAmount; i++)
             {
-                if (_asteroids[i].GetDrawingStatus()) 
+                if (_asteroids[i].GetDrawingStatus() && !_asteroids[i].GetExplosionStatus()) 
                 {
                     g = Graphics.FromImage(back);
-                    var asteroid = Image.FromFile(Resources + "asteroid32.png");
+                    var asteroid = Image.FromFile(Resources + "asteroid64.png");
                     var point = new Point(_asteroids[i].GetX(), _asteroids[i].GetY());
                     g.DrawImage(asteroid, point);
 
-                    if (_drawHitboxes)
+                    if (DrawHitboxes)
                     {
                         var asteroidRect = new Rectangle(_asteroids[i].GetX(), _asteroids[i].GetY(),
                             _asteroids[i].GetWidth(), _asteroids[i].GetHeight());
@@ -118,6 +162,20 @@ namespace FlyMeToTheMoon
                         asteroidPed.Width = 1.0F;
                         g.DrawRectangle(asteroidPed, asteroidRect);
                     }
+                }
+
+                if (_asteroids[i].GetExplosionStatus())
+                {
+                    if (_asteroids[i].GetExplosionTimer() >= MaxExplosionTime)
+                    {
+                        _asteroids[i].SetExplosionStatus(false);
+                        _asteroids[i].SetDrawingStatus(false);
+                    }
+                    g = Graphics.FromImage(back);
+                    var explosion = Image.FromFile(Resources + "explosion.png");
+                    var point = new Point(_asteroids[i].GetX(), _asteroids[i].GetY());
+                    g.DrawImage(explosion, point);
+                    _asteroids[i].IncExplosionTimer(ExplosionTimer);
                 }
             }
             
@@ -131,7 +189,7 @@ namespace FlyMeToTheMoon
                 if (!_bullets[i].GetDrawingStatus())
                 {
                     _bullets[i].SetDrawingStatus(true);
-                    _bullets[i].SetPosition(_rocket.GetX() + 11, _rocket.GetY() - 23);
+                    _bullets[i].SetPosition(_rocket.GetX() + _rocket.GetWidth() / 2, _rocket.GetY() - 23);
                     break;
                 }
             }    
@@ -141,11 +199,33 @@ namespace FlyMeToTheMoon
         {
             var rightKeyIsPressed = GetAsyncKeyState(Convert.ToInt32(Keys.D)) != 0;
             var leftKeyIsPressed = GetAsyncKeyState(Convert.ToInt32(Keys.A)) != 0;
-            var spaceKeyIsPressed = GetAsyncKeyState(Convert.ToInt32(Keys.Space)) != 0;
             
+            var upKeyIsPressed = GetAsyncKeyState(Convert.ToInt32(Keys.W)) != 0;
+            var downIsPressed = GetAsyncKeyState(Convert.ToInt32(Keys.S)) != 0;
+            
+            var spaceKeyIsPressed = GetAsyncKeyState(Convert.ToInt32(Keys.Space)) != 0;
+
+
+            if (upKeyIsPressed)
+            {
+                if (_rocket.CheckWorldHeights(Size.Height, MoveSize, false))
+                {
+                    _rocket.DecY(MoveSize);
+                }
+            }
+            else if (downIsPressed)
+            {
+                if (_rocket.CheckWorldHeights(Size.Height - _rocket.GetHeight(), MoveSize, true))
+                {
+                    _rocket.IncY(MoveSize);
+                }
+            }
             if (rightKeyIsPressed)
             {
-                if (_rocket.CheckWorldBorders(Size.Width - 29, MoveSize, true)) { 
+                if (_rocket.CheckWorldBorders(Size.Width - 65, MoveSize, true))
+                {
+                    _rocket.IsMovingRight = true;
+                    _rocket.IsMovingLeft = false;
                     _rocket.IncX(MoveSize);
                 }         
             }
@@ -153,14 +233,21 @@ namespace FlyMeToTheMoon
             {
                 if (_rocket.CheckWorldBorders(Size.Width, MoveSize, false))
                 {
+                    _rocket.IsMovingRight = false;
+                    _rocket.IsMovingLeft = true;
                     _rocket.DecX(MoveSize);
                 }    
+            }
+            else
+            {
+                _rocket.IsMovingRight = false;
+                _rocket.IsMovingLeft = false;
             }
             if (spaceKeyIsPressed && _lastFired > FireRate)
             {
                 _lastFired = 0;
                 _rocket.IncUsedBullets(1);
-                label3.Text = "BULLETS: " + _rocket.GetUsedBullets();
+                label3.Text = @"BULLETS: " + _rocket.GetUsedBullets();
                 FireRocket();
             }
         }
@@ -184,7 +271,7 @@ namespace FlyMeToTheMoon
         {
             for (var i = 0; i < AsteroidsAmount; i++)
             {
-                if (_asteroids[i].GetY() > 360)
+                if (_asteroids[i].GetY() > Height - _asteroids[i].GetHeight() - 10)
                 {
                     _asteroids[i].SetDrawingStatus(false);
                 }
@@ -209,7 +296,7 @@ namespace FlyMeToTheMoon
             var index = 0;
             do
             {
-                if (!_asteroids[index].GetDrawingStatus())
+                if (!_asteroids[index].GetDrawingStatus() && !_asteroids[index].GetExplosionStatus())
                 {
                     _asteroids[index].SetDrawingStatus(true);
                     _asteroids[index].SetPosition(asteroidSpawnPoints[count], 30);
@@ -217,26 +304,6 @@ namespace FlyMeToTheMoon
                 }
                 index++;
             } while (count < rowSize && index < AsteroidsAmount);
-        }
-        
-        public bool CheckCollision(Point l1, Point r1, Point l2, Point r2)
-        {
-            if (l1.X == r1.X || l1.Y == r1.Y || r2.X == l2.X || l2.Y == r2.Y)
-            {
-                return false;
-            }
-       
-            if (l1.X > r2.X || l2.X > r1.X)
-            {
-                return false;
-            }
- 
-            if (r1.Y > l2.Y || r2.Y > l1.Y)
-            {
-                return false;
-            }
-            
-            return true;
         }
         
         private void CheckBulletCollisions()
@@ -254,11 +321,14 @@ namespace FlyMeToTheMoon
                     
                             if (bulletRect.IntersectsWith(asteroidRect))
                             {
+                                _asteroids[j].SetExplosionStatus(true);
                                 _asteroids[j].SetDrawingStatus(false);
+                                _asteroids[j].SetExplosionTimer(0);
+                                
                                 _bullets[i].SetDrawingStatus(false);
                                 _rocket.IncHighScore(50);
                                 _rocket.IncHits(1);
-                                label4.Text = "HITS: " + _rocket.GetHits();
+                                label4.Text = @"HITS: " + _rocket.GetHits();
                             }      
                         }   
                     }
@@ -277,53 +347,66 @@ namespace FlyMeToTheMoon
                     
                     if (rocketRect.IntersectsWith(asteroidRect))
                     {
+                        _asteroids[i].SetExplosionStatus(true);
                         _asteroids[i].SetDrawingStatus(false);
+                        _asteroids[i].SetExplosionTimer(0);
                         _rocket.DecHealth(HealthDecRate);
-                        label2.Text = "HEALTH: " + _rocket.GetHealth();
+                        label2.Text = @"HEALTH: " + _rocket.GetHealth();
                         if (_rocket.GetHealth() <= 20)
                         {
                             label2.ForeColor = Color.Red;
-                            label2.Text = "HEALTH: " + _rocket.GetHealth();
+                            label2.Text = @"HEALTH: " + _rocket.GetHealth();
                         }
                     }    
                 }
             }
         }
 
-        private Image DrawFinalBackground()
-        {
-            var back = Image.FromFile(Resources + "back_fin.png");
-            return back;
-        }
-        
-        private void Timer_Tick(object sender, EventArgs e)
+        private void MainLoopExecute()
         {
             if (_lastFired < FireRate + 1)
             {
                 _lastFired++;
             }
+            
             GetMoves();
+            
             _rocket.IncHighScore(2);
+            
             if (_lastSpawned > SpawnRate + 1)
             {
                 SpawnNewAsteroids();
                 _lastSpawned = 0;
             }
             _lastSpawned++;
+            
             CheckRocketCollisions();
             CheckBulletCollisions();
             MoveBullets();
             MoveAsteroids();
             BackgroundImage = DrawBackground();
             SetHigh();
-            DateTime currentDateTime = DateTime.Now;
-            string formattedDateTime = currentDateTime.ToString("HH:mm:ss");
-            label5.Text = "TIME: " + formattedDateTime;
+            var currentDateTime = DateTime.Now;
+            var formattedDateTime = currentDateTime.ToString("HH:mm:ss");
+            label5.Text = @"TIME: " + formattedDateTime;
+            
             if (_rocket.GetHealth() <= 0)
             {
-                Timer.Enabled = false;
+                _aTimer.Enabled = false;
+                label6.Visible = true;
                 BackgroundImage = DrawFinalBackground();
             }
+        }
+        
+        private static Image DrawFinalBackground()
+        {
+            var back = Image.FromFile(Resources + "back.png");
+            return back;
+        }
+        
+        private void OnTimedEvent(Object source, System.Timers.ElapsedEventArgs e)
+        {
+            MainLoopExecute();
         }
     }
 }

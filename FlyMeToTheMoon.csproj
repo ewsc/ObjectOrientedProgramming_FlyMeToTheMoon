@@ -49,6 +49,7 @@
         <Compile Include="Asteroid.cs" />
         <Compile Include="Bullet.cs" />
         <Compile Include="DrawObject.cs" />
+        <Compile Include="Event.cs" />
         <Compile Include="GameField.cs">
             <SubType>Form</SubType>
         </Compile>

@@ -10,6 +10,26 @@ namespace FlyMeToTheMoon
         protected int Height;
         protected bool IsDrawing;
 
+        public bool CheckCollision(Point l1, Point r1, Point l2, Point r2)
+        {
+            if (l1.X == r1.X || l1.Y == r1.Y || r2.X == l2.X || l2.Y == r2.Y)
+            {
+                return false;
+            }
+       
+            if (l1.X > r2.X || l2.X > r1.X)
+            {
+                return false;
+            }
+ 
+            if (r1.Y > l2.Y || r2.Y > l1.Y)
+            {
+                return false;
+            }
+            
+            return true;
+        }
+
         public void SetDrawingStatus(bool drawingStatus)
         {
             IsDrawing = drawingStatus;
@@ -24,6 +44,19 @@ namespace FlyMeToTheMoon
         {
             Height = height;
             Width = width;
+        }
+
+        public bool CheckWorldHeights(int maxHeight, int moveSize, bool inc)
+        {
+            if ((PosY - moveSize <= 0) && !inc)
+            {
+                return false;
+            }
+            if ((PosY + moveSize >= maxHeight) && inc)
+            {
+                return false;
+            }
+            return true;    
         }
 
         public bool CheckWorldBorders(int maxBord, int moveSize, bool inc)

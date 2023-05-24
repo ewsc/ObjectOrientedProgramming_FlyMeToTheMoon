@@ -7,6 +7,8 @@
         protected int Health;
         protected int UsedBullets;
         protected int Hits;
+        public bool IsMovingLeft;
+        public bool IsMovingRight;
 
         public void SetUsedBullets(int value)
         {
