@@ -9,7 +9,18 @@
         protected int Hits;
         public bool IsMovingLeft;
         public bool IsMovingRight;
+        protected int Difficulty;
 
+        public int GetDifficulty()
+        {
+            return Difficulty;
+        }
+
+        public void SetDifficulty(int value)
+        {
+            Difficulty = value;
+        }
+        
         public void SetUsedBullets(int value)
         {
             UsedBullets = value;

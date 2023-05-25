@@ -97,6 +97,7 @@
             this.MinimizeBox = false;
             this.Name = "GameField";
             this.ShowIcon = false;
+            this.MouseDown += new System.Windows.Forms.MouseEventHandler(this.GameField_MouseDown);
             this.panel1.ResumeLayout(false);
             this.ResumeLayout(false);
         }

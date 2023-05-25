@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Drawing;
+using System.Drawing.Drawing2D;
 using System.Runtime.InteropServices;
 using System.Windows.Forms;
 
@@ -14,14 +15,13 @@ namespace FlyMeToTheMoon
         
         private const int MoveSize = 9;
         private const int BulletMoveSize = 9;
-        private const int AsteroidMoveSize = 3;
         private const int BulletsAmount = 20;
         private const int AsteroidsAmount = 25;
         private const int FireRate = 13; // MIN=4
         private const int SpawnRate = 20;
         private const int MaxAsteroidRow = 3;
         private const int HealthDecRate = 20;
-        private const bool DrawHitboxes = false;
+        private const bool DrawHitboxes = true;
         private const int ExplosionTimer = 2;
         private const int MaxExplosionTime = 100;
         private const int AsteroidMoveSpeedMin = 2;
@@ -29,11 +29,14 @@ namespace FlyMeToTheMoon
 
         private readonly List<Bullet> _bullets = new List<Bullet>();
         private readonly List<Asteroid> _asteroids = new List<Asteroid>();
+        private readonly List<MenuItem> _menu = new List<MenuItem>();
         private readonly Player _rocket = new Player();
         private int _lastFired;
         private int _lastSpawned;
         private static System.Timers.Timer _aTimer;
         private bool _canMove;
+        private bool _menuOpened;
+        private int _lastOpened;
         
         public GameField()
         {
@@ -58,13 +61,14 @@ namespace FlyMeToTheMoon
             label4.Text = @"HITS: " + _rocket.GetHits();
             var currentDateTime = DateTime.Now;
             label5.Text = @"TIME: " + currentDateTime;
-            
         }
 
         private void StartGame()
         {
             _canMove = true;
+            _menuOpened = false;
             _rocket.SetWidthHeight(56, 128);
+            _rocket.SetDifficulty(1);
             _rocket.SetPosition((Width / 2) - _rocket.GetWidth(), 2 * (Height / 3));
             _rocket.SetHighScore(0);
             _rocket.SetHeath(100);
@@ -75,6 +79,49 @@ namespace FlyMeToTheMoon
             InitBullets();
             InitAsteroids();
             _aTimer.Enabled = true;
+            InitMenuItems();
+        }
+
+        private static string GetDifficultyStrings(int difficulty)
+        {
+            switch (difficulty)
+            {
+                case 0:
+                    return "Easy";
+                case 1:
+                    return "Medium";
+                case 2:
+                    return "Hard";
+                default:
+                    return "null";
+            }
+        }
+
+        private void InitMenuItems()
+        {
+            var saveItem = new MenuItem();
+            saveItem.SetItemName("Save");
+            saveItem.SetPosition(80, 250);
+            saveItem.SetWidthHeight(300, 100);
+            _menu.Add(saveItem);
+            
+            var loadItem = new MenuItem();
+            loadItem.SetItemName("Load");
+            loadItem.SetPosition(80, 350);
+            loadItem.SetWidthHeight(300, 100);
+            _menu.Add(loadItem);
+            
+            var diffItem = new MenuItem();
+            diffItem.SetItemName("Difficulty: " + GetDifficultyStrings(_rocket.GetDifficulty()));
+            diffItem.SetPosition(80, 450);
+            diffItem.SetWidthHeight(800, 100);
+            _menu.Add(diffItem);
+            
+            var exitItem = new MenuItem();
+            exitItem.SetItemName("Exit");
+            exitItem.SetPosition(80, 550);
+            exitItem.SetWidthHeight(300, 100);
+            _menu.Add(exitItem);
         }
 
         private void PlaceLabels()
@@ -134,7 +181,7 @@ namespace FlyMeToTheMoon
                     }
                 }
 
-                if (_asteroids[i].GetExplosionStatus())
+                if (!_asteroids[i].GetExplosionStatus()) continue;
                 {
                     if (_asteroids[i].GetExplosionTimer() >= MaxExplosionTime)
                     {
@@ -211,13 +258,19 @@ namespace FlyMeToTheMoon
             }    
         }
 
+        private static bool GetPressedKey(string keyName)
+        {
+            
+            return GetAsyncKeyState(Convert.ToInt32(Enum.Parse(typeof(Keys), keyName, true))) != 0;
+        }
+
         private void GetMoves()
         {
-            var rightKeyIsPressed = GetAsyncKeyState(Convert.ToInt32(Keys.D)) != 0;
-            var leftKeyIsPressed = GetAsyncKeyState(Convert.ToInt32(Keys.A)) != 0;
-            var upKeyIsPressed = GetAsyncKeyState(Convert.ToInt32(Keys.W)) != 0;
-            var downIsPressed = GetAsyncKeyState(Convert.ToInt32(Keys.S)) != 0;
-            var spaceKeyIsPressed = GetAsyncKeyState(Convert.ToInt32(Keys.Space)) != 0;
+            var rightKeyIsPressed = GetPressedKey("D");
+            var leftKeyIsPressed = GetPressedKey("A");
+            var upKeyIsPressed = GetPressedKey("W");
+            var downIsPressed = GetPressedKey("S");
+            var spaceKeyIsPressed = GetPressedKey("Space");
 
             if (upKeyIsPressed)
             {
@@ -392,50 +445,114 @@ namespace FlyMeToTheMoon
             return back;
         }
 
-        private void MainLoopExecute()
+        private void NormalMovingState()
+        {
+            GetMoves();
+            _rocket.IncHighScore(2);
+            if (_lastSpawned > SpawnRate + 1)
+            {
+                SpawnNewAsteroids();
+                _lastSpawned = 0;
+            }
+
+            _lastSpawned++;
+
+            CheckRocketCollisions();
+            CheckBulletCollisions();
+            MoveBullets();
+            MoveAsteroids();
+            BackgroundImage = DrawBackground();    
+        }
+
+        private void NormalLoopState()
         {
             if (_lastFired < FireRate + 1)
             {
                 _lastFired++;
             }
-
             if (_canMove)
             {
-                GetMoves();
-                _rocket.IncHighScore(2);
-                if (_lastSpawned > SpawnRate + 1)
-                {
-                    SpawnNewAsteroids();
-                    _lastSpawned = 0;
-                }
-                _lastSpawned++;
-                
-                UpdateLabels();
-                CheckRocketCollisions();
-                CheckBulletCollisions();
-                MoveBullets();
-                MoveAsteroids();
-                BackgroundImage = DrawBackground();
+                NormalMovingState();
             }
             else
             {
                 BackgroundImage = DrawFinBackground();
             }
-            
-            if (_rocket.GetHealth() <= 0)
+            UpdateLabels();
+            if (_rocket.GetHealth() > 0) return;
+            _canMove = false;
+            var rKeyIsPressed = GetPressedKey("R");
+            if (rKeyIsPressed)
             {
-                _canMove = false;
-                var rKeyIsPressed = GetAsyncKeyState(Convert.ToInt32(Keys.R)) != 0;
-                if (rKeyIsPressed)
+                StartGame();
+            }    
+        }
+
+        private Image DrawMenu()
+        {
+            var back = Image.FromFile(Resources + "back_menu.jpg");
+            var g = Graphics.FromImage(back);
+            g.SmoothingMode = SmoothingMode.AntiAlias;
+            g.InterpolationMode = InterpolationMode.HighQualityBicubic;
+            g.PixelOffsetMode = PixelOffsetMode.HighQuality;
+            foreach (var item in _menu)
+            {
+                var textRect = new RectangleF(item.GetX(), item.GetY(), item.GetWidth(), item.GetHeight());
+                g.DrawString(item.GetItemName(), new Font("hooge 05_55",72), Brushes.WhiteSmoke, textRect);
+                
+                if (DrawHitboxes)
                 {
-                    StartGame();
+                    var textRectBord = new Rectangle(item.GetX(), item.GetY(),
+                        item.GetWidth(), item.GetHeight());
+                    var itemPen = new Pen(Brushes.Red);
+                    itemPen.Width = 1.0F;
+                    g.DrawRectangle(itemPen, textRectBord);
                 }
+            }
+            g.Flush();
+            return back;
+        }
+
+        private void MainLoopExecute()
+        {
+            if (GetPressedKey("Escape"))
+            {
+                if (_lastOpened >= 50)
+                {
+                    _menuOpened = !_menuOpened;
+                    _lastOpened = 0;
+                }
+                else
+                {
+                    _lastOpened += 10;
+                }
+            }
+
+            if (_menuOpened)
+            {
+                BackgroundImage = DrawMenu();
+            }
+            else
+            {
+                NormalLoopState();
             }
         }
 
-        private void OnTimedEvent(Object source, System.Timers.ElapsedEventArgs e)
+        private void OnTimedEvent(object source, System.Timers.ElapsedEventArgs e)
         {
             MainLoopExecute();
+        }
+
+        private void GameField_MouseDown(object sender, MouseEventArgs e)
+        {
+            if (!_menuOpened) return;
+            foreach (var item in _menu)
+            {
+                var textRect = new RectangleF(item.GetX(), item.GetY(), item.GetWidth(), item.GetHeight());
+                if (!textRect.Contains(e.Location)) continue;
+                item.ItemExecution();
+                break;
+            }
         }
     }
 }
