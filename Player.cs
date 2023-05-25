@@ -1,4 +1,7 @@
-﻿namespace FlyMeToTheMoon
+﻿using System;
+using System.Globalization;
+
+namespace FlyMeToTheMoon
 {
     public class Player : DrawObject
     {
@@ -31,6 +34,15 @@
             {
                 Difficulty++;
             }
+        }
+
+        public string GetAccuracy()
+        {
+            if (UsedBullets == 0) return "0";
+            float hits = Hits * 100;
+            var accuracy = hits / UsedBullets;
+            var decimalValue = Math.Round((decimal)accuracy, 0);
+            return decimalValue.ToString(CultureInfo.InvariantCulture);
         }
         
         public void SetUsedBullets(int value)
