@@ -20,6 +20,18 @@
         {
             Difficulty = value;
         }
+
+        public void IncDifficulty()
+        {
+            if (Difficulty == 2)
+            {
+                Difficulty = 0;
+            }
+            else
+            {
+                Difficulty++;
+            }
+        }
         
         public void SetUsedBullets(int value)
         {

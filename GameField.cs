@@ -112,7 +112,8 @@ namespace FlyMeToTheMoon
             _menu.Add(loadItem);
             
             var diffItem = new MenuItem();
-            diffItem.SetItemName("Difficulty: " + GetDifficultyStrings(_rocket.GetDifficulty()));
+            diffItem.SetItemName("Difficulty");
+            diffItem.SetItemAttr(": " + GetDifficultyStrings(_rocket.GetDifficulty()));
             diffItem.SetPosition(80, 450);
             diffItem.SetWidthHeight(800, 100);
             _menu.Add(diffItem);
@@ -498,7 +499,10 @@ namespace FlyMeToTheMoon
             foreach (var item in _menu)
             {
                 var textRect = new RectangleF(item.GetX(), item.GetY(), item.GetWidth(), item.GetHeight());
-                g.DrawString(item.GetItemName(), new Font("hooge 05_55",72), Brushes.WhiteSmoke, textRect);
+
+                var outText = item.GetItemName() + item.GetItemAttr();
+                
+                g.DrawString(outText, new Font("hooge 05_55",72), Brushes.WhiteSmoke, textRect);
                 
                 if (DrawHitboxes)
                 {
@@ -543,6 +547,24 @@ namespace FlyMeToTheMoon
             MainLoopExecute();
         }
 
+        private void ChangeDifficulty(MenuItem item)
+        {
+            _rocket.IncDifficulty();
+            item.SetItemAttr(": " + GetDifficultyStrings(_rocket.GetDifficulty()));    
+        }
+
+        private void ExecuteMenuItem(MenuItem item)
+        {
+            if (item.GetItemName() == "Exit")
+            { 
+                Application.ExitThread();    
+            } 
+            else if (item.GetItemName() == "Difficulty")
+            {
+                ChangeDifficulty(item);
+            }
+        }
+
         private void GameField_MouseDown(object sender, MouseEventArgs e)
         {
             if (!_menuOpened) return;
@@ -550,7 +572,7 @@ namespace FlyMeToTheMoon
             {
                 var textRect = new RectangleF(item.GetX(), item.GetY(), item.GetWidth(), item.GetHeight());
                 if (!textRect.Contains(e.Location)) continue;
-                item.ItemExecution();
+                ExecuteMenuItem(item);
                 break;
             }
         }
