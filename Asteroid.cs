@@ -4,7 +4,17 @@
     {
         protected bool IsExploded;
         protected int ExplosionTimer;
+        protected int MoveSpeed;
 
+        public void SetMoveSpeed(int value)
+        {
+            MoveSpeed = value;
+        }
+
+        public int GetMoveSpeed()
+        {
+            return MoveSpeed;
+        }
         public void SetExplosionStatus(bool status)
         {
             IsExploded = status;

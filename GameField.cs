@@ -17,13 +17,15 @@ namespace FlyMeToTheMoon
         private const int AsteroidMoveSize = 3;
         private const int BulletsAmount = 20;
         private const int AsteroidsAmount = 25;
-        private const int FireRate = 8; // MIN=4
+        private const int FireRate = 13; // MIN=4
         private const int SpawnRate = 20;
         private const int MaxAsteroidRow = 3;
         private const int HealthDecRate = 20;
-        private const bool DrawHitboxes = true;
+        private const bool DrawHitboxes = false;
         private const int ExplosionTimer = 2;
         private const int MaxExplosionTime = 100;
+        private const int AsteroidMoveSpeedMin = 2;
+        private const int AsteroidMoveSpeedMax = 6;
 
         private readonly List<Bullet> _bullets = new List<Bullet>();
         private readonly List<Asteroid> _asteroids = new List<Asteroid>();
@@ -288,7 +290,7 @@ namespace FlyMeToTheMoon
                 }
                 if (_asteroids[i].GetDrawingStatus())
                 {
-                    _asteroids[i].MoveAsteroid(AsteroidMoveSize);
+                    _asteroids[i].MoveAsteroid(_asteroids[i].GetMoveSpeed());
                 }
             } 
         }
@@ -297,10 +299,14 @@ namespace FlyMeToTheMoon
         {
             var rand = new Random();
             var rowSize = rand.Next(1, MaxAsteroidRow);
-            List<int> asteroidSpawnPoints = new List<int>();
+            List<Point> asteroidSpawnPoints = new List<Point>();
             for (var i = 0; i < rowSize; i++)
             {
-                var position = rand.Next(10, Width - 60);
+                var position = new Point()
+                {
+                    X = rand.Next(10, Width - 60),
+                    Y = rand.Next(30, 100),
+                };
                 asteroidSpawnPoints.Add(position);
             }
             var count = 0;
@@ -310,7 +316,8 @@ namespace FlyMeToTheMoon
                 if (!_asteroids[index].GetDrawingStatus() && !_asteroids[index].GetExplosionStatus())
                 {
                     _asteroids[index].SetDrawingStatus(true);
-                    _asteroids[index].SetPosition(asteroidSpawnPoints[count], 30);
+                    _asteroids[index].SetMoveSpeed(rand.Next(AsteroidMoveSpeedMin, AsteroidMoveSpeedMax));
+                    _asteroids[index].SetPosition(asteroidSpawnPoints[count].X, asteroidSpawnPoints[count].Y);
                     count++;
                 }
                 index++;
