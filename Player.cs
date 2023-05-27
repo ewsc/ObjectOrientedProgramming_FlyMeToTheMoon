@@ -83,6 +83,16 @@ namespace FlyMeToTheMoon
                 Health = 0;
             }
         }
+        
+        public int GetHits()
+        {
+            return Hits;
+        }
+        
+        public int GetUsedBullets()
+        {
+            return UsedBullets;
+        }
 
         public int GetHealth()
         {

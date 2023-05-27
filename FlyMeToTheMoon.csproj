@@ -58,6 +58,7 @@
         </Compile>
         <Compile Include="Menu.cs" />
         <Compile Include="MenuItem.cs" />
+        <Compile Include="Message.cs" />
         <Compile Include="Player.cs" />
         <Compile Include="Program.cs" />
         <Compile Include="Properties\AssemblyInfo.cs" />

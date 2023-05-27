@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Drawing;
 using System.Drawing.Drawing2D;
+using System.IO;
 using System.Runtime.InteropServices;
 using System.Windows.Forms;
 
@@ -31,11 +32,13 @@ namespace FlyMeToTheMoon
         private int _currentSelectedMenuItem;
         
         private const string Resources = "../../resources/";
+        private const string SaveGameFile = "../../saves/savefile.fmtm";
 
         private readonly List<Bullet> _bullets = new List<Bullet>();
         private readonly List<Asteroid> _asteroids = new List<Asteroid>();
         private readonly List<MenuItem> _menu = new List<MenuItem>();
         private readonly Player _rocket = new Player();
+        private readonly List<Message> _gameNotifications = new List<Message>();
         private int _lastFired;
         private int _lastSpawned;
         private static System.Timers.Timer _aTimer;
@@ -47,7 +50,7 @@ namespace FlyMeToTheMoon
         
         public GameField()
         {
-            
+            Cursor.Current = Cursors.Hand;
             FormBorderStyle = FormBorderStyle.None;
             WindowState = FormWindowState.Maximized;
             InitializeComponent();
@@ -62,6 +65,7 @@ namespace FlyMeToTheMoon
             _aTimer.AutoReset = true;
             
             StartGame();
+            AddMessage("Game started!", 100);
             
             label1.Text = @"SCORE: " + _rocket.GetHighScore();
             label2.Text = @"HEALTH: " + _rocket.GetHealth();
@@ -69,6 +73,17 @@ namespace FlyMeToTheMoon
             label4.Text = @"DIFFICULTY: " + GetDifficultyStrings(_rocket.GetDifficulty());
             var currentDateTime = DateTime.Now;
             label5.Text = @"TIME: " + currentDateTime;
+        }
+
+        private void AddMessage(string text, int duration)
+        {
+            var tempMessage = new Message();
+            tempMessage.SetPosition(10, Height - 100);
+            tempMessage.SetWidthHeight(text.Length * 50, 100);
+            tempMessage.SetMessage(text);
+            tempMessage.SetDuration(duration);
+            tempMessage.SetDrawingStatus(true);
+            _gameNotifications.Add(tempMessage);
         }
 
         private void ChangeDifficulty()
@@ -500,9 +515,33 @@ namespace FlyMeToTheMoon
             CheckBulletCollisions();
             MoveBullets();
             MoveAsteroids();
-            BackgroundImage = DrawBackground();    
+            BackgroundImage = DrawBackground();
+            BackgroundImage = CheckMessages(BackgroundImage);
         }
 
+        private Image CheckMessages(Image back)
+        {
+            foreach (var message in _gameNotifications)
+            {
+                if (!message.GetDrawingStatus()) continue;
+                if (message.GetDuration() <= 0)
+                {
+                    message.SetDrawingStatus(false);
+                }
+                message.DecDuration(1);
+                var g = Graphics.FromImage(back);
+                g.SmoothingMode = SmoothingMode.AntiAlias;
+                g.InterpolationMode = InterpolationMode.HighQualityBicubic;
+                g.PixelOffsetMode = PixelOffsetMode.HighQuality;
+                var textRect = new RectangleF(message.GetX(), message.GetY(), message.GetWidth(), message.GetHeight());
+                var outText = message.GetMessage();
+                g.DrawString(outText, new Font("hooge 05_55",72), Brushes.WhiteSmoke, textRect);
+                g.Flush();
+                break;
+            }
+            return back;
+        }
+        
         private void NormalLoopState()
         {
             if (_lastFired < _fireRate + 1)
@@ -624,6 +663,60 @@ namespace FlyMeToTheMoon
             ChangeDifficulty();
         }
 
+        private void SaveGame()
+        {
+            try
+            {
+                if (File.Exists(SaveGameFile))    
+                {    
+                    File.Delete(SaveGameFile);    
+                }
+                using (var writer = File.CreateText(SaveGameFile))
+                {
+                    writer.WriteLine("+USER");
+                    writer.WriteLine("score=" + _rocket.GetHighScore());    
+                    writer.WriteLine("accuracy=" + _rocket.GetAccuracy());    
+                    writer.WriteLine("bullets=" + _rocket.GetUsedBullets());    
+                    writer.WriteLine("hits=" + _rocket.GetHits());    
+                    writer.WriteLine("health=" + _rocket.GetHealth());
+                    writer.WriteLine("difficulty=" + _rocket.GetDifficulty());
+                    writer.WriteLine("posX=" + _rocket.GetX());
+                    writer.WriteLine("posY=" + _rocket.GetY());
+                    writer.WriteLine("+USER");
+                    
+                    writer.WriteLine("+ASTEROIDS");
+                    foreach (var asteroid in _asteroids)
+                    {
+                        if (!asteroid.GetDrawingStatus()) continue;
+                        writer.WriteLine("[[[");
+                        writer.WriteLine("posX=" + asteroid.GetX());
+                        writer.WriteLine("posY=" + asteroid.GetY());
+                        writer.WriteLine("speed=" + asteroid.GetMoveSpeed());
+                        writer.WriteLine("expTimer=" + asteroid.GetExplosionTimer());
+                        writer.WriteLine("exp=" + asteroid.GetExplosionStatus());
+                        writer.WriteLine("[[[");
+                    }
+                    writer.WriteLine("+ASTEROIDS");
+                    
+                    writer.WriteLine("+BULLETS");
+                    foreach (var bullet in _bullets)
+                    {
+                        if (!bullet.GetDrawingStatus()) continue;
+                        writer.WriteLine(">>>");
+                        writer.WriteLine("posX=" + bullet.GetX());
+                        writer.WriteLine("posY=" + bullet.GetY());
+                        writer.WriteLine(">>>");
+                    }
+                    writer.WriteLine("+BULLETS");
+                } 
+                AddMessage("Game Saved!", 100);
+            }
+            catch (Exception ex)    
+            {    
+                AddMessage(ex.ToString(), 100);   
+            }
+        }
+
         private void ExecuteMenuItem(MenuItem item)
         {
             if (item.GetItemName() == "Exit")
@@ -637,6 +730,10 @@ namespace FlyMeToTheMoon
             else if (item.GetItemName() == "Resume")
             {
                 _menuOpened = false;
+            }
+            else if (item.GetItemName() == "Save")
+            {
+                SaveGame();
             }
         }
 
