@@ -11,12 +11,9 @@ namespace FlyMeToTheMoon
     {
         [DllImport("user32.dll")]
         private static extern short GetAsyncKeyState(int key);
-        private const string Resources = "../../resources/";
-        
         
         private const int BulletsAmount = 20;
         private const int AsteroidsAmount = 25;
-        private const bool DrawHitboxes = false;
         private const int ExplosionTimer = 2;
         private const int MaxExplosionTime = 100;
         private const int MenuOpenDelay = 30;
@@ -31,6 +28,9 @@ namespace FlyMeToTheMoon
         private int _asteroidMoveSpeedMin = 2;
         private int _asteroidMoveSpeedMax = 6;
         private int _highScoreIncValue = 2;
+        private int _currentSelectedMenuItem;
+        
+        private const string Resources = "../../resources/";
 
         private readonly List<Bullet> _bullets = new List<Bullet>();
         private readonly List<Asteroid> _asteroids = new List<Asteroid>();
@@ -42,9 +42,12 @@ namespace FlyMeToTheMoon
         private bool _canMove;
         private bool _menuOpened;
         private int _lastOpened;
+        private int _lastJumpedMenu;
+        private int _lastEnterPressed;
         
         public GameField()
         {
+            
             FormBorderStyle = FormBorderStyle.None;
             WindowState = FormWindowState.Maximized;
             InitializeComponent();
@@ -225,15 +228,6 @@ namespace FlyMeToTheMoon
                     var asteroid = Image.FromFile(Resources + "asteroid64.png");
                     var point = new Point(_asteroids[i].GetX(), _asteroids[i].GetY());
                     g.DrawImage(asteroid, point);
-
-                    if (DrawHitboxes)
-                    {
-                        var asteroidRect = new Rectangle(_asteroids[i].GetX(), _asteroids[i].GetY(),
-                            _asteroids[i].GetWidth(), _asteroids[i].GetHeight());
-                        var asteroidPed = new Pen(Brushes.Red);
-                        asteroidPed.Width = 1.0F;
-                        g.DrawRectangle(asteroidPed, asteroidRect);
-                    }
                 }
 
                 if (!_asteroids[i].GetExplosionStatus()) continue;
@@ -286,14 +280,6 @@ namespace FlyMeToTheMoon
             var g = Graphics.FromImage(back);
             var p = new Point(_rocket.GetX(), _rocket.GetY()); 
             g.DrawImage(actor, p);
-
-            if (DrawHitboxes)
-            {
-                var actorRect = new Rectangle(_rocket.GetX(), _rocket.GetY(), _rocket.GetWidth(), _rocket.GetHeight());
-                var actorPen = new Pen(Brushes.DeepSkyBlue);
-                actorPen.Width = 1.0F;
-                g.DrawRectangle(actorPen, actorRect);
-            }
 
             back = DrawAsteroids(back);
             back = DrawBullets(back);
@@ -543,27 +529,44 @@ namespace FlyMeToTheMoon
 
         private Image DrawMenu()
         {
+            var downKeyIsPressed = GetPressedKey("S");
+            var upKeyIsPressed = GetPressedKey("W");
+            
+            if (_lastJumpedMenu >= 5)
+            {
+                if (upKeyIsPressed && _currentSelectedMenuItem != 0)
+                {
+                    _currentSelectedMenuItem--;
+                }
+                else if (downKeyIsPressed && _currentSelectedMenuItem != _menu.Count - 1)
+                {
+                    _currentSelectedMenuItem++;
+                }
+                _lastJumpedMenu = 0;
+            }
+
+            if (_lastJumpedMenu <= 5)
+            {
+                _lastJumpedMenu++;
+            }
+            
             var back = Image.FromFile(Resources + "back_menu.jpg");
             var g = Graphics.FromImage(back);
             g.SmoothingMode = SmoothingMode.AntiAlias;
             g.InterpolationMode = InterpolationMode.HighQualityBicubic;
             g.PixelOffsetMode = PixelOffsetMode.HighQuality;
-            foreach (var item in _menu)
+            for (var i = 0; i < _menu.Count; i++)
             {
-                var textRect = new RectangleF(item.GetX(), item.GetY(), item.GetWidth(), item.GetHeight());
-
-                var outText = item.GetItemName() + item.GetItemAttr();
-                
+                var textRect = new RectangleF(_menu[i].GetX(), _menu[i].GetY(), _menu[i].GetWidth(), _menu[i].GetHeight());
+                var outText = _menu[i].GetItemName() + _menu[i].GetItemAttr();
                 g.DrawString(outText, new Font("hooge 05_55",72), Brushes.WhiteSmoke, textRect);
-                
-                if (DrawHitboxes)
-                {
-                    var textRectBord = new Rectangle(item.GetX(), item.GetY(),
-                        item.GetWidth(), item.GetHeight());
-                    var itemPen = new Pen(Brushes.Red);
-                    itemPen.Width = 1.0F;
-                    g.DrawRectangle(itemPen, textRectBord);
-                }
+
+                if (i != _currentSelectedMenuItem) continue;
+                var textRectBord = new Rectangle(_menu[i].GetX(), _menu[i].GetY(),
+                    _menu[i].GetWidth(), _menu[i].GetHeight());
+                var itemPen = new Pen(Brushes.WhiteSmoke);
+                itemPen.Width = 1.0F;
+                g.DrawRectangle(itemPen, textRectBord);
             }
             g.Flush();
             return back;
@@ -575,6 +578,7 @@ namespace FlyMeToTheMoon
             {
                 if (_lastOpened >= MenuOpenDelay)
                 {
+                    _currentSelectedMenuItem = 0;
                     _menuOpened = !_menuOpened;
                     _lastOpened = 0;
                 }
@@ -587,6 +591,20 @@ namespace FlyMeToTheMoon
             if (_menuOpened)
             {
                 BackgroundImage = DrawMenu();
+                
+                var enterKeyIsPressed = GetPressedKey("Enter");
+                if (_lastEnterPressed >= 20)
+                {
+                    if (enterKeyIsPressed)
+                    {
+                        ExecuteMenuItem(_menu[_currentSelectedMenuItem]);
+                        _lastEnterPressed = 0;
+                    }
+                }
+                if (_lastEnterPressed <= 20)
+                {
+                    _lastEnterPressed++;
+                }
             }
             else
             {

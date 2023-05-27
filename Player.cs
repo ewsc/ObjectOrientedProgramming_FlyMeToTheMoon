@@ -54,11 +54,6 @@ namespace FlyMeToTheMoon
         {
             UsedBullets += value;
         }
-
-        public int GetUsedBullets()
-        {
-            return UsedBullets;
-        }
         
         public void SetHits(int value)
         {
@@ -68,11 +63,6 @@ namespace FlyMeToTheMoon
         public void IncHits(int value)
         {
             Hits += value;
-        }
-
-        public int GetHits()
-        {
-            return Hits;
         }
 
         public void SetHighScore(int value)
@@ -88,6 +78,10 @@ namespace FlyMeToTheMoon
         public void DecHealth(int value)
         {
             Health -= value;
+            if (Health < 0)
+            {
+                Health = 0;
+            }
         }
 
         public int GetHealth()
