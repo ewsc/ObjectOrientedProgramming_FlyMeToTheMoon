@@ -674,40 +674,37 @@ namespace FlyMeToTheMoon
                 using (var writer = File.CreateText(SaveGameFile))
                 {
                     writer.WriteLine("+USER");
-                    writer.WriteLine("score=" + _rocket.GetHighScore());    
-                    writer.WriteLine("accuracy=" + _rocket.GetAccuracy());    
+                    writer.WriteLine("score=" + _rocket.GetHighScore());      
                     writer.WriteLine("bullets=" + _rocket.GetUsedBullets());    
                     writer.WriteLine("hits=" + _rocket.GetHits());    
                     writer.WriteLine("health=" + _rocket.GetHealth());
                     writer.WriteLine("difficulty=" + _rocket.GetDifficulty());
                     writer.WriteLine("posX=" + _rocket.GetX());
                     writer.WriteLine("posY=" + _rocket.GetY());
-                    writer.WriteLine("+USER");
+                    writer.WriteLine("-USER");
                     
                     writer.WriteLine("+ASTEROIDS");
                     foreach (var asteroid in _asteroids)
                     {
                         if (!asteroid.GetDrawingStatus()) continue;
-                        writer.WriteLine("[[[");
                         writer.WriteLine("posX=" + asteroid.GetX());
                         writer.WriteLine("posY=" + asteroid.GetY());
                         writer.WriteLine("speed=" + asteroid.GetMoveSpeed());
                         writer.WriteLine("expTimer=" + asteroid.GetExplosionTimer());
                         writer.WriteLine("exp=" + asteroid.GetExplosionStatus());
-                        writer.WriteLine("[[[");
+                        writer.WriteLine("[");
                     }
-                    writer.WriteLine("+ASTEROIDS");
+                    writer.WriteLine("-ASTEROIDS");
                     
                     writer.WriteLine("+BULLETS");
                     foreach (var bullet in _bullets)
                     {
                         if (!bullet.GetDrawingStatus()) continue;
-                        writer.WriteLine(">>>");
                         writer.WriteLine("posX=" + bullet.GetX());
                         writer.WriteLine("posY=" + bullet.GetY());
-                        writer.WriteLine(">>>");
+                        writer.WriteLine(">");
                     }
-                    writer.WriteLine("+BULLETS");
+                    writer.WriteLine("-BULLETS");
                 } 
                 AddMessage("Game Saved!", 100);
             }
@@ -715,6 +712,103 @@ namespace FlyMeToTheMoon
             {    
                 AddMessage(ex.ToString(), 100);   
             }
+        }
+        
+        private void AddNewAsteroid(Asteroid astro)
+        {
+            for (var i = 0; i < AsteroidsAmount; i++)
+            {
+                if (_asteroids[i].GetDrawingStatus()) continue;
+                _asteroids[i] = astro;
+                break;
+            }  
+        }
+        
+        private void AddBullet(Bullet bulka)
+        {
+            for (var i = 0; i < BulletsAmount; i++)
+            {
+                if (_bullets[i].GetDrawingStatus()) continue;
+                _bullets[i] = bulka;
+                break;
+            }  
+        }
+
+        private void LoadGame()
+        {
+            try
+            {
+                if (!File.Exists(SaveGameFile)) return;
+                
+                var lines = File.ReadAllText(SaveGameFile);
+                var pFrom = lines.IndexOf("+USER", StringComparison.Ordinal) + "+USER".Length;
+                var pTo = lines.LastIndexOf("-USER", StringComparison.Ordinal);
+                var result = lines.Substring(pFrom, pTo - pFrom);
+                var regex = new[] { "\r\n" };
+                var userStr = result.Split(regex, StringSplitOptions.None);
+                
+                _rocket.SetHighScore(int.Parse(userStr[1].Split('=')[1]));
+                _rocket.SetUsedBullets(int.Parse(userStr[2].Split('=')[1]));
+                _rocket.SetHits(int.Parse(userStr[3].Split('=')[1]));
+                _rocket.SetHeath(int.Parse(userStr[4].Split('=')[1]));
+                _rocket.SetDifficulty(int.Parse(userStr[5].Split('=')[1]));
+                _rocket.SetPosition(int.Parse(userStr[6].Split('=')[1]), int.Parse(userStr[7].Split('=')[1]));
+                    
+                ChangeDifficulty();
+                
+                pFrom = lines.IndexOf("+ASTEROIDS", StringComparison.Ordinal) + "+ASTEROIDS".Length;
+                pTo = lines.LastIndexOf("-ASTEROIDS", StringComparison.Ordinal);
+                result = lines.Substring(pFrom, pTo - pFrom);
+                var astroStr = result.Split('[');
+                
+                InitAsteroids();
+                foreach (var line in astroStr)
+                {
+                    if (line.Length <= 5) continue;
+                    var tempAstroLine = line.Split(regex, StringSplitOptions.None);
+                    var tempAstro = new Asteroid();
+                    tempAstro.SetPosition(int.Parse(tempAstroLine[1].Split('=')[1]), int.Parse(tempAstroLine[2].Split('=')[1]));
+                    tempAstro.SetMoveSpeed(int.Parse(tempAstroLine[3].Split('=')[1]));
+                    tempAstro.SetExplosionTimer(int.Parse(tempAstroLine[4].Split('=')[1]));
+                    switch (tempAstroLine[5].Split('=')[1])
+                    {
+                        case "True":
+                            tempAstro.SetExplosionStatus(true);
+                            tempAstro.SetDrawingStatus(false);
+                            break;
+                        case "False":
+                            tempAstro.SetExplosionStatus(false);
+                            tempAstro.SetDrawingStatus(true);
+                            break;
+                    }
+                    tempAstro.SetWidthHeight(64, 64);
+                    AddNewAsteroid(tempAstro);
+                }
+                
+                pFrom = lines.IndexOf("+BULLETS", StringComparison.Ordinal) + "+BULLETS".Length;
+                pTo = lines.LastIndexOf("-BULLETS", StringComparison.Ordinal);
+                result = lines.Substring(pFrom, pTo - pFrom);
+                var bulletStr = result.Split('>');
+                
+                InitBullets();
+                
+                foreach (var line in bulletStr)
+                {
+                    if (line.Length <= 5) continue;
+                    var tempBulletLine = line.Split(regex, StringSplitOptions.None);
+                    var tempBullet = new Bullet();
+                    tempBullet.SetDrawingStatus(true);
+                    tempBullet.SetWidthHeight(10, 32);
+                    tempBullet.SetPosition(int.Parse(tempBulletLine[1].Split('=')[1]), int.Parse(tempBulletLine[2].Split('=')[1]));
+                    AddBullet(tempBullet);
+                }
+                
+                AddMessage("Game Loaded!", 100);
+            }
+            catch (Exception ex)
+            {
+                AddMessage(ex.ToString(), 100); 
+            }   
         }
 
         private void ExecuteMenuItem(MenuItem item)
@@ -734,6 +828,12 @@ namespace FlyMeToTheMoon
             else if (item.GetItemName() == "Save")
             {
                 SaveGame();
+                _menuOpened = false;
+            }
+            else if (item.GetItemName() == "Load")
+            {
+                LoadGame();
+                _menuOpened = false;
             }
         }
 
