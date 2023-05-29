@@ -8,7 +8,7 @@ using System.Windows.Forms;
 
 namespace FlyMeToTheMoon
 {
-    public partial class GameField : Form
+    public sealed partial class GameField : Form
     {
         [DllImport("user32.dll")]
         private static extern short GetAsyncKeyState(int key);
@@ -37,6 +37,7 @@ namespace FlyMeToTheMoon
         private readonly List<Bullet> _bullets = new List<Bullet>();
         private readonly List<Asteroid> _asteroids = new List<Asteroid>();
         private readonly List<MenuItem> _menu = new List<MenuItem>();
+        private readonly List<Size> _resolutions = new List<Size>();
         private readonly Player _rocket = new Player();
         private readonly List<Message> _gameNotifications = new List<Message>();
         private int _lastFired;
@@ -50,7 +51,6 @@ namespace FlyMeToTheMoon
         
         public GameField()
         {
-            Cursor.Current = Cursors.Hand;
             FormBorderStyle = FormBorderStyle.None;
             WindowState = FormWindowState.Maximized;
             InitializeComponent();
@@ -73,6 +73,23 @@ namespace FlyMeToTheMoon
             label4.Text = @"DIFFICULTY: " + GetDifficultyStrings(_rocket.GetDifficulty());
             var currentDateTime = DateTime.Now;
             label5.Text = @"TIME: " + currentDateTime;
+            label6.Text = @"|| MENU";
+        }
+
+        private void InitResolution()
+        {
+            var res0 = new Size(Screen.PrimaryScreen.Bounds.Width, Screen.PrimaryScreen.Bounds.Height);
+            _resolutions.Add(res0);
+            var res1 = new Size(1680, 1050);
+            _resolutions.Add(res1);
+            var res2 = new Size(1440, 900);
+            _resolutions.Add(res2);
+            var res3 = new Size(1400, 1050);
+            _resolutions.Add(res3);
+            var res4 = new Size(1366, 768);
+            _resolutions.Add(res4);
+            var res5 = new Size(1280, 1080);
+            _resolutions.Add(res5);
         }
 
         private void AddMessage(string text, int duration)
@@ -138,12 +155,46 @@ namespace FlyMeToTheMoon
             _rocket.SetHeath(100);
             _rocket.SetUsedBullets(0);
             _rocket.SetHits(0);
+            _rocket.SetResolution(0);
             _rocket.IsMovingLeft = false;
             _rocket.IsMovingRight = false;
             InitBullets();
             InitAsteroids();
             _aTimer.Enabled = true;
+            InitResolution();
             InitMenuItems();
+            ResizeBackgrounds();
+        }
+
+        private void ResizeBackgrounds()
+        {
+            var mainBack = Image.FromFile(Resources + "back.jpg");
+            for (var i = 0; i < _resolutions.Count; i++)
+            {
+                var tempImage = (Image) new Bitmap(mainBack, _resolutions[i]);
+                tempImage.Save(Resources + "back" + i + ".jpg");
+            }   
+        }
+
+        private string ReturnResolutionName()
+        {
+            switch (_rocket.GetResolution())
+            {
+                case 0:
+                    return "1920x1080";
+                case 1:
+                    return "1680x1050";
+                case 2:
+                    return "1440x900";
+                case 3:
+                    return "1400x1050";
+                case 4:
+                    return "1366x768";
+                case 5:
+                    return "1280x1080";
+                default:
+                    return "unknown";
+            }
         }
 
         private static string GetDifficultyStrings(int difficulty)
@@ -190,22 +241,30 @@ namespace FlyMeToTheMoon
             diffItem.SetWidthHeight(800, 100);
             _menu.Add(diffItem);
             
+            var resItem = new MenuItem();
+            resItem.SetItemName("Resolution");
+            resItem.SetItemAttr(": " + ReturnResolutionName());
+            resItem.SetPosition(80, 650);
+            resItem.SetWidthHeight(1000, 100);
+            _menu.Add(resItem);
+            
             var exitItem = new MenuItem();
             exitItem.SetItemName("Exit");
-            exitItem.SetPosition(80, 650);
+            exitItem.SetPosition(80, 750);
             exitItem.SetWidthHeight(300, 100);
             _menu.Add(exitItem);
         }
 
         private void PlaceLabels()
         {
-            var size = Width / 5;
+            var size = Screen.PrimaryScreen.Bounds.Width / 6;
             
             label1.Left = size * 0;
             label2.Left = size * 1;
             label3.Left = size * 2;
             label4.Left = size * 3;
             label5.Left = size * 4;
+            label6.Left = size * 5;
         }
 
         private void InitAsteroids()
@@ -277,7 +336,8 @@ namespace FlyMeToTheMoon
 
         private Image DrawBackground()
         {
-            var back = Image.FromFile(Resources + "back.jpg");
+            Image back;
+            back = _rocket.GetResolution() == 0 ? Image.FromFile(Resources + "back.jpg") : Image.FromFile(Resources + "back" + _rocket.GetResolution() + ".jpg");
             Image actor;
             if (_rocket.IsMovingRight && !_rocket.IsMovingLeft)
             {
@@ -557,6 +617,7 @@ namespace FlyMeToTheMoon
                 BackgroundImage = DrawFinBackground();
             }
             UpdateLabels();
+            
             if (_rocket.GetHealth() > 0) return;
             _canMove = false;
             var rKeyIsPressed = GetPressedKey("R");
@@ -811,6 +872,11 @@ namespace FlyMeToTheMoon
             }   
         }
 
+        private void ChangeResolution()
+        {
+            Size = _resolutions[_rocket.GetResolution()];
+        }
+
         private void ExecuteMenuItem(MenuItem item)
         {
             if (item.GetItemName() == "Exit")
@@ -835,6 +901,12 @@ namespace FlyMeToTheMoon
                 LoadGame();
                 _menuOpened = false;
             }
+            else if (item.GetItemName() == "Resolution")
+            {
+                _rocket.IncResolution();
+                item.SetItemAttr(": " + ReturnResolutionName());
+                ChangeResolution();
+            }
         }
 
         private void GameField_MouseDown(object sender, MouseEventArgs e)
@@ -847,6 +919,11 @@ namespace FlyMeToTheMoon
                 ExecuteMenuItem(item);
                 break;
             }
+        }
+
+        private void label6_Click(object sender, EventArgs e)
+        {
+            _menuOpened = true;
         }
     }
 }

@@ -13,6 +13,7 @@ namespace FlyMeToTheMoon
         public bool IsMovingLeft;
         public bool IsMovingRight;
         protected int Difficulty;
+        protected int Resolution;
 
         public int GetDifficulty()
         {
@@ -33,6 +34,28 @@ namespace FlyMeToTheMoon
             else
             {
                 Difficulty++;
+            }
+        }
+        
+        public int GetResolution()
+        {
+            return Resolution;
+        }
+
+        public void SetResolution(int value)
+        {
+            Resolution = value;
+        }
+
+        public void IncResolution()
+        {
+            if (Resolution == 5)
+            {
+                Resolution = 0;
+            }
+            else
+            {
+                Resolution++;
             }
         }
 
