@@ -47,8 +47,9 @@
     </ItemGroup>
     <ItemGroup>
         <Compile Include="Asteroid.cs" />
-        <Compile Include="Bonus.cs" />
         <Compile Include="Bullet.cs" />
+        <Compile Include="CollisionChecker.cs" />
+        <Compile Include="Drawer.cs" />
         <Compile Include="DrawObject.cs" />
         <Compile Include="Event.cs" />
         <Compile Include="FileWriter.cs" />
@@ -64,6 +65,7 @@
         <Compile Include="Player.cs" />
         <Compile Include="Program.cs" />
         <Compile Include="Properties\AssemblyInfo.cs" />
+        <Compile Include="Spawner.cs" />
         <EmbeddedResource Include="GameField.resx">
           <DependentUpon>GameField.cs</DependentUpon>
         </EmbeddedResource>

@@ -1,4 +1,6 @@
-﻿namespace FlyMeToTheMoon
+﻿using System.Collections.Generic;
+
+namespace FlyMeToTheMoon
 {
     public class Message : DrawObject
     {
@@ -14,6 +16,15 @@
         public string GetMessage()
         {
             return MessageText;
+        }
+        
+        public void AddMessage(string text, int duration, ref List <Message> gameNotifications)
+        {
+            SetWidthHeight(text.Length * 50, 100);
+            SetMessage(text);
+            SetDuration(duration);
+            SetDrawingStatus(true);
+            gameNotifications.Add(this);
         }
 
         public void SetDuration(int value)
