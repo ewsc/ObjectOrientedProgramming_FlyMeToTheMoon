@@ -18,19 +18,22 @@ namespace FlyMeToTheMoon
         private const int ExplosionTimer = 2;
         private const int MaxExplosionTime = 100;
         private const int MenuOpenDelay = 30;
+        private const int BonusMovingSpeed = 8;
         
         //LEVEL VARIABLES
         private int _moveSize = 9;
         private int _bulletMoveSize = 9;
         private int _fireRate = 13; // MIN=4
         private int _spawnRate = 20;
+        private int _bonusRate = 100;
         private int _maxAsteroidRow = 3;
         private int _healthDecRate = 20;
         private int _asteroidMoveSpeedMin = 2;
         private int _asteroidMoveSpeedMax = 6;
+        private int _bonusAmount = 5;
         private int _highScoreIncValue = 2;
         private int _currentSelectedMenuItem;
-        
+
         private const string Resources = "../../resources/";
         private const string SaveGameFile = "../../saves/savefile.fmtm";
 
@@ -38,6 +41,7 @@ namespace FlyMeToTheMoon
         private readonly List<Asteroid> _asteroids = new List<Asteroid>();
         private readonly List<MenuItem> _menu = new List<MenuItem>();
         private readonly List<Size> _resolutions = new List<Size>();
+        private readonly List<Bonus> _bonuses = new List<Bonus>();
         private readonly Player _rocket = new Player();
         private readonly List<Message> _gameNotifications = new List<Message>();
         private int _lastFired;
@@ -48,6 +52,7 @@ namespace FlyMeToTheMoon
         private int _lastOpened;
         private int _lastJumpedMenu;
         private int _lastEnterPressed;
+        private int _lastBonusSpawned;
         
         public GameField()
         {
@@ -64,8 +69,9 @@ namespace FlyMeToTheMoon
             _aTimer.Elapsed += OnTimedEvent;
             _aTimer.AutoReset = true;
             
+            AddMessage("Game Started!", 100);
+            
             StartGame();
-            AddMessage("Game started!", 100);
             
             label1.Text = @"SCORE: " + _rocket.GetHighScore();
             label2.Text = @"HEALTH: " + _rocket.GetHealth();
@@ -74,6 +80,28 @@ namespace FlyMeToTheMoon
             var currentDateTime = DateTime.Now;
             label5.Text = @"TIME: " + currentDateTime;
             label6.Text = @"|| MENU";
+        }
+        
+        private void AddMessage(string text, int duration)
+        {
+            var tempMessage = new Message();
+            tempMessage.SetPosition(10, Height - 100);
+            tempMessage.SetWidthHeight(text.Length * 50, 100);
+            tempMessage.SetMessage(text);
+            tempMessage.SetDuration(duration);
+            tempMessage.SetDrawingStatus(true);
+            _gameNotifications.Add(tempMessage);
+        }
+
+        private void InitBonuses()
+        {
+            for (var i = 0; i < _bonusAmount; i++)
+            {
+                var tempBonus = new Bonus();
+                tempBonus.SetDrawingStatus(false);
+                tempBonus.SetWidthHeight(32, 32);
+                _bonuses.Add(tempBonus);
+            }    
         }
 
         private void InitResolution()
@@ -90,17 +118,6 @@ namespace FlyMeToTheMoon
             _resolutions.Add(res4);
             var res5 = new Size(1280, 1080);
             _resolutions.Add(res5);
-        }
-
-        private void AddMessage(string text, int duration)
-        {
-            var tempMessage = new Message();
-            tempMessage.SetPosition(10, Height - 100);
-            tempMessage.SetWidthHeight(text.Length * 50, 100);
-            tempMessage.SetMessage(text);
-            tempMessage.SetDuration(duration);
-            tempMessage.SetDrawingStatus(true);
-            _gameNotifications.Add(tempMessage);
         }
 
         private void ChangeDifficulty()
@@ -160,6 +177,7 @@ namespace FlyMeToTheMoon
             _rocket.IsMovingRight = false;
             InitBullets();
             InitAsteroids();
+            InitBonuses();
             _aTimer.Enabled = true;
             InitResolution();
             InitMenuItems();
@@ -267,6 +285,18 @@ namespace FlyMeToTheMoon
             label6.Left = size * 5;
         }
 
+        private void SpawnBonus()
+        {
+            foreach (var bonus in _bonuses)
+            {
+                if (bonus.GetDrawingStatus()) continue;
+                var rand = new Random();
+                bonus.SetDrawingStatus(true);
+                bonus.SetPosition(rand.Next(30, Width - 60), rand.Next(10, 60));
+                break;
+            }
+        }
+
         private void InitAsteroids()
         {
             _asteroids.Clear();
@@ -334,10 +364,22 @@ namespace FlyMeToTheMoon
             return back;
         }
 
+        private Image DrawBonuses(Image back)
+        {
+            for (var i = 0; i < _bonusAmount; i++)
+            {
+                if (!_bonuses[i].GetDrawingStatus()) continue;
+                var g = Graphics.FromImage(back);
+                var bonus = Image.FromFile(Resources + "bonus.png");
+                var point = new Point(_bonuses[i].GetX(), _bonuses[i].GetY());
+                g.DrawImage(bonus, point);
+            }
+            return back;
+        }
+
         private Image DrawBackground()
         {
-            Image back;
-            back = _rocket.GetResolution() == 0 ? Image.FromFile(Resources + "back.jpg") : Image.FromFile(Resources + "back" + _rocket.GetResolution() + ".jpg");
+            var back = _rocket.GetResolution() == 0 ? Image.FromFile(Resources + "back.jpg") : Image.FromFile(Resources + "back" + _rocket.GetResolution() + ".jpg");
             Image actor;
             if (_rocket.IsMovingRight && !_rocket.IsMovingLeft)
             {
@@ -358,6 +400,7 @@ namespace FlyMeToTheMoon
 
             back = DrawAsteroids(back);
             back = DrawBullets(back);
+            back = DrawBonuses(back);
             return back;
         }
 
@@ -376,7 +419,6 @@ namespace FlyMeToTheMoon
 
         private static bool GetPressedKey(string keyName)
         {
-            
             return GetAsyncKeyState(Convert.ToInt32(Enum.Parse(typeof(Keys), keyName, true))) != 0;
         }
 
@@ -473,7 +515,7 @@ namespace FlyMeToTheMoon
                 var position = new Point()
                 {
                     X = rand.Next(10, Width - 60),
-                    Y = rand.Next(30, 100),
+                    Y = rand.Next(20, 100),
                 };
                 asteroidSpawnPoints.Add(position);
             }
@@ -559,6 +601,15 @@ namespace FlyMeToTheMoon
             return back;
         }
 
+        private void MoveBonuses()
+        {
+            foreach (var bonus in _bonuses)
+            {
+                if (!bonus.GetDrawingStatus()) continue;
+                bonus.DecY(BonusMovingSpeed);
+            }
+        }
+
         private void NormalMovingState()
         {
             GetMoves();
@@ -569,12 +620,20 @@ namespace FlyMeToTheMoon
                 _lastSpawned = 0;
             }
 
+            if (_lastBonusSpawned > _bonusRate + 1)
+            {
+                SpawnBonus();
+                _lastBonusSpawned = 0;
+            }
+
             _lastSpawned++;
+            _lastBonusSpawned++;
 
             CheckRocketCollisions();
             CheckBulletCollisions();
             MoveBullets();
             MoveAsteroids();
+            MoveBonuses();
             BackgroundImage = DrawBackground();
             BackgroundImage = CheckMessages(BackgroundImage);
         }
@@ -723,57 +782,6 @@ namespace FlyMeToTheMoon
             item.SetItemAttr(": " + GetDifficultyStrings(_rocket.GetDifficulty()));
             ChangeDifficulty();
         }
-
-        private void SaveGame()
-        {
-            try
-            {
-                if (File.Exists(SaveGameFile))    
-                {    
-                    File.Delete(SaveGameFile);    
-                }
-                using (var writer = File.CreateText(SaveGameFile))
-                {
-                    writer.WriteLine("+USER");
-                    writer.WriteLine("score=" + _rocket.GetHighScore());      
-                    writer.WriteLine("bullets=" + _rocket.GetUsedBullets());    
-                    writer.WriteLine("hits=" + _rocket.GetHits());    
-                    writer.WriteLine("health=" + _rocket.GetHealth());
-                    writer.WriteLine("difficulty=" + _rocket.GetDifficulty());
-                    writer.WriteLine("posX=" + _rocket.GetX());
-                    writer.WriteLine("posY=" + _rocket.GetY());
-                    writer.WriteLine("-USER");
-                    
-                    writer.WriteLine("+ASTEROIDS");
-                    foreach (var asteroid in _asteroids)
-                    {
-                        if (!asteroid.GetDrawingStatus()) continue;
-                        writer.WriteLine("posX=" + asteroid.GetX());
-                        writer.WriteLine("posY=" + asteroid.GetY());
-                        writer.WriteLine("speed=" + asteroid.GetMoveSpeed());
-                        writer.WriteLine("expTimer=" + asteroid.GetExplosionTimer());
-                        writer.WriteLine("exp=" + asteroid.GetExplosionStatus());
-                        writer.WriteLine("[");
-                    }
-                    writer.WriteLine("-ASTEROIDS");
-                    
-                    writer.WriteLine("+BULLETS");
-                    foreach (var bullet in _bullets)
-                    {
-                        if (!bullet.GetDrawingStatus()) continue;
-                        writer.WriteLine("posX=" + bullet.GetX());
-                        writer.WriteLine("posY=" + bullet.GetY());
-                        writer.WriteLine(">");
-                    }
-                    writer.WriteLine("-BULLETS");
-                } 
-                AddMessage("Game Saved!", 100);
-            }
-            catch (Exception ex)    
-            {    
-                AddMessage(ex.ToString(), 100);   
-            }
-        }
         
         private void AddNewAsteroid(Asteroid astro)
         {
@@ -864,11 +872,13 @@ namespace FlyMeToTheMoon
                     AddBullet(tempBullet);
                 }
                 
+                var startMessage = new Message();
                 AddMessage("Game Loaded!", 100);
+                _gameNotifications.Add(startMessage);
             }
             catch (Exception ex)
             {
-                AddMessage(ex.ToString(), 100); 
+                AddMessage(ex.ToString(), 100);
             }   
         }
 
@@ -893,8 +903,10 @@ namespace FlyMeToTheMoon
             }
             else if (item.GetItemName() == "Save")
             {
-                SaveGame();
+                var fileWriter = new FileWriter();
+                fileWriter.SaveGame(_rocket, _asteroids, _bullets);
                 _menuOpened = false;
+                AddMessage("Game Saved!", 100);
             }
             else if (item.GetItemName() == "Load")
             {
