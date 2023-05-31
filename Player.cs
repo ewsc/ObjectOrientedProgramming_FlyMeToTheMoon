@@ -140,5 +140,17 @@ namespace FlyMeToTheMoon
                 SmHighScore = 0;
             }
         }
+
+        public void BonusSetHigh(int value, bool inc)
+        {
+            if (inc)
+            {
+                HighScore += value;
+            }
+            else
+            {
+                HighScore -= value;
+            }
+        }
     }
 }

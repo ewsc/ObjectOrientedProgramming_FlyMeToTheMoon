@@ -20,7 +20,7 @@ namespace FlyMeToTheMoon
         private const int MenuOpenDelay = 50;
         private const int BonusesAmount = 5;
         private const int BonusSpeed = 3;
-        private const int BonusTypeMax = 4;
+        private const int BonusTypeMax = 6;
         
         //LEVEL VARIABLES
         private int _moveSize = 9;
@@ -449,7 +449,6 @@ namespace FlyMeToTheMoon
                     _bonuses[i].SetDrawingStatus(false);
                 }
             }
-            
         }
 
         private void ExecuteBonus(int bonusType)
@@ -470,17 +469,31 @@ namespace FlyMeToTheMoon
             }
             else if (bonusType == 3)
             {
-                _fireRate += 1;
+                _fireRate -= 1;
                 var message = new Message();
                 message.SetPosition(10, Height - 100);
                 message.AddMessage("Firerate upgraded!", 100, ref _gameNotifications);
             }
             else if (bonusType == 4)
             {
-                _fireRate -= 1;
+                _fireRate += 1;
                 var message = new Message();
                 message.SetPosition(10, Height - 100);
                 message.AddMessage("Firerate downgraded!", 100, ref _gameNotifications);
+            }
+            else if (bonusType == 5)
+            {
+                _rocket.BonusSetHigh(10, true);
+                var message = new Message();
+                message.SetPosition(10, Height - 100);
+                message.AddMessage("+10 SCORE", 100, ref _gameNotifications);
+            }
+            else if (bonusType == 6)
+            {
+                _rocket.BonusSetHigh(10, false);
+                var message = new Message();
+                message.SetPosition(10, Height - 100);
+                message.AddMessage("-10 SCORE", 100, ref _gameNotifications);
             }
         }
         
