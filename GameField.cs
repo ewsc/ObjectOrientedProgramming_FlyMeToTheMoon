@@ -438,22 +438,6 @@ namespace FlyMeToTheMoon
             return back;
         }
 
-        private void SpawnBonus()
-        {
-            for (var i = 0; i < BonusesAmount; i++)
-            {
-                if (_bonuses[i].GetDrawingStatus()) continue;
-                var rand = new Random();
-                var x = rand.Next(_bonuses[i].GetWidth(), Width - 2 * _bonuses[i].GetWidth());
-                var y = rand.Next(10, 60);
-                
-                _bonuses[i].SetBonusType(rand.Next(1, BonusTypeMax));
-                _bonuses[i].SetPosition(x, y);
-                _bonuses[i].SetDrawingStatus(true);
-                break;
-            }
-        }
-
         private void MoveBonuses()
         {
             for (var i = 0; i < BonusesAmount; i++)
@@ -466,26 +450,6 @@ namespace FlyMeToTheMoon
                 }
             }
             
-        }
-
-        private int CheckBonusCollision()
-        {
-            for (var i = 0; i < BonusesAmount; i++)
-            {
-                if (_bonuses[i].GetDrawingStatus())
-                {
-                    var rocketRect = new Rectangle(_rocket.GetX(), _rocket.GetY(), _rocket.GetWidth(), _rocket.GetHeight());
-                    var bonusRect = new Rectangle(_bonuses[i].GetX(), _bonuses[i].GetY(),
-                        _bonuses[i].GetWidth(), _bonuses[i].GetHeight());
-
-                    if (rocketRect.IntersectsWith(bonusRect))
-                    {
-                        _bonuses[i].SetDrawingStatus(false);
-                        return _bonuses[i].GetBonusType();
-                    }
-                }
-            }
-            return -1;
         }
 
         private void ExecuteBonus(int bonusType)
@@ -533,7 +497,8 @@ namespace FlyMeToTheMoon
 
             if (_lastBonusSpawned > _bonusSpawnRate + 1)
             {
-                SpawnBonus();
+                var spawner = new Spawner();
+                spawner.SpawnBonus(ref _bonuses, BonusesAmount, BonusTypeMax, Width);
                 _lastBonusSpawned = 0;
             }
             
@@ -543,7 +508,7 @@ namespace FlyMeToTheMoon
             var collision = new CollisionChecker();
             collision.CheckRocketCollisions(ref _rocket, ref _asteroids, _healthDecRate, AsteroidsAmount);
             collision.CheckBulletCollisions(ref _rocket, ref _asteroids, ref _bullets, BulletsAmount, AsteroidsAmount);
-            var bonusEffect = CheckBonusCollision();
+            var bonusEffect = collision.CheckBonusCollision(ref _rocket, ref _bonuses, BonusesAmount);
 
             if (bonusEffect != -1)
             {
@@ -573,7 +538,6 @@ namespace FlyMeToTheMoon
                 g.PixelOffsetMode = PixelOffsetMode.HighQuality;
                 var textRect = new RectangleF(message.GetX(), message.GetY(), message.GetWidth(), message.GetHeight());
                 var outText = message.GetMessage();
-                
                 g.DrawString(outText, new Font("hooge 05_55",72), Brushes.WhiteSmoke, textRect);
                 g.Flush();
                 break;

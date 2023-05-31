@@ -45,5 +45,21 @@ namespace FlyMeToTheMoon
                 break;
             }    
         }
+        
+        public void SpawnBonus(ref List<Bonus> bonuses, int bonusesAmount, int bonusTypeMax, int width)
+        {
+            for (var i = 0; i < bonusesAmount; i++)
+            {
+                if (bonuses[i].GetDrawingStatus()) continue;
+                var rand = new Random();
+                var x = rand.Next(bonuses[i].GetWidth(), width - 2 * bonuses[i].GetWidth());
+                var y = rand.Next(10, 60);
+                
+                bonuses[i].SetBonusType(rand.Next(1, bonusTypeMax));
+                bonuses[i].SetPosition(x, y);
+                bonuses[i].SetDrawingStatus(true);
+                break;
+            }
+        }
     }
 }

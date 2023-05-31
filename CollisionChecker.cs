@@ -55,5 +55,25 @@ namespace FlyMeToTheMoon
                 }
             }
         }
+        
+        public int CheckBonusCollision(ref Player rocket, ref List<Bonus> bonusList, int bonusesAmount)
+        {
+            for (var i = 0; i < bonusesAmount; i++)
+            {
+                if (bonusList[i].GetDrawingStatus())
+                {
+                    var rocketRect = new Rectangle(rocket.GetX(), rocket.GetY(), rocket.GetWidth(), rocket.GetHeight());
+                    var bonusRect = new Rectangle(bonusList[i].GetX(), bonusList[i].GetY(),
+                        bonusList[i].GetWidth(), bonusList[i].GetHeight());
+
+                    if (rocketRect.IntersectsWith(bonusRect))
+                    {
+                        bonusList[i].SetDrawingStatus(false);
+                        return bonusList[i].GetBonusType();
+                    }
+                }
+            }
+            return -1;
+        }
     }
 }
