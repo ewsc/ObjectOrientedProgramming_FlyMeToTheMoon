@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Drawing;
 
 namespace FlyMeToTheMoon
 {
@@ -7,6 +8,17 @@ namespace FlyMeToTheMoon
         protected string MessageText;
         protected int LastShown;
         protected DrawObject Author;
+        protected Brushes Color;
+
+        public void SetColor(Brushes value)
+        {
+            Color = value;
+        }
+
+        public Brushes GetColor()
+        {
+            return Color;
+        }
 
         public void SetMessage(string value)
         {

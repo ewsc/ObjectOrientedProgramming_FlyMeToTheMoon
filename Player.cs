@@ -25,6 +25,11 @@ namespace FlyMeToTheMoon
             Difficulty = value;
         }
 
+        public void IncHealth(int value)
+        {
+            Health += value;
+        }
+
         public void IncDifficulty()
         {
             if (Difficulty == 2)

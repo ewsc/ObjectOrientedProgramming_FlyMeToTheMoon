@@ -46,5 +46,18 @@ namespace FlyMeToTheMoon
             }
             return back;
         }
+        
+        public Image DrawBonuses(Image back, ref List<Bonus> bonuses, int bonusesAmount, string resources)
+        {
+            for (var i = 0; i < bonusesAmount; i++)
+            {
+                if (!bonuses[i].GetDrawingStatus()) continue;
+                var g = Graphics.FromImage(back);
+                var explosion = Image.FromFile(resources + "bonus.png");
+                var point = new Point(bonuses[i].GetX(), bonuses[i].GetY());
+                g.DrawImage(explosion, point);
+            }
+            return back;
+        }
     }
 }

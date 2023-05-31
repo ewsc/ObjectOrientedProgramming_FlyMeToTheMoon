@@ -47,6 +47,7 @@
     </ItemGroup>
     <ItemGroup>
         <Compile Include="Asteroid.cs" />
+        <Compile Include="Bonus.cs" />
         <Compile Include="Bullet.cs" />
         <Compile Include="CollisionChecker.cs" />
         <Compile Include="Drawer.cs" />
