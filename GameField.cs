@@ -588,6 +588,8 @@ namespace FlyMeToTheMoon
                 var textRect = new RectangleF(message.GetX(), message.GetY(), message.GetWidth(), message.GetHeight());
                 var outText = message.GetMessage();
                 g.DrawString(outText, new Font("hooge 05_55",size), Brushes.WhiteSmoke, textRect);
+                var buttonRect = new RectangleF(message.GetX() + (message.GetMessage().Length * 45), message.GetY(), 20, 20);
+                g.DrawString("x", new Font("hooge 05_55", size - 50), Brushes.WhiteSmoke, buttonRect);
                 g.Flush();
                 break;
             }
@@ -664,7 +666,7 @@ namespace FlyMeToTheMoon
             return back;
         }
 
-        private void MainLoopExecute()
+        private void MainLoopExecute(Event TimerEvent)
         {
             if (GetPressedKey("Escape"))
             {
@@ -706,7 +708,10 @@ namespace FlyMeToTheMoon
 
         private void OnTimedEvent(object source, System.Timers.ElapsedEventArgs e)
         {
-            MainLoopExecute();
+            var TimerEvent = new Event();
+            TimerEvent.SetEventName("Tick");
+            TimerEvent.SetTime();
+            MainLoopExecute(TimerEvent);
         }
 
         private void ChangeDifficulty(MenuItem item)
@@ -860,12 +865,22 @@ namespace FlyMeToTheMoon
 
         private void GameField_MouseDown(object sender, MouseEventArgs e)
         {
-            if (!_menuOpened) return;
-            foreach (var item in _menu)
+            if (_menuOpened)
             {
-                var textRect = new RectangleF(item.GetX(), item.GetY(), item.GetWidth(), item.GetHeight());
-                if (!textRect.Contains(e.Location)) continue;
-                ExecuteMenuItem(item);
+                foreach (var item in _menu)
+                {
+                    var textRect = new RectangleF(item.GetX(), item.GetY(), item.GetWidth(), item.GetHeight());
+                    if (!textRect.Contains(e.Location)) continue;
+                    ExecuteMenuItem(item);
+                    break;
+                }
+            }
+
+            foreach (var message in _gameNotifications)
+            {
+                var buttonRect = new RectangleF(message.GetX() + (message.GetMessage().Length * 45), message.GetY(), 20, 20);    
+                if (!buttonRect.Contains(e.Location)) continue;
+                message.SetDuration(0);
                 break;
             }
         }
