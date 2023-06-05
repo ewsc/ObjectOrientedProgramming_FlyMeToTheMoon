@@ -26,8 +26,19 @@ namespace FlyMeToTheMoon
                 }
             }
         }
+
+        private void AddScore(ref List<Message> scores, int x, int y)
+        {
+            var score = new Message();
+            score.SetDrawingStatus(true);
+            score.SetPosition(x, y);
+            score.SetWidthHeight(100, 100);
+            score.SetMessage("10");
+            score.SetDuration(100);
+            scores.Add(score);
+        }
         
-        public void CheckBulletCollisions(ref Player rocket, ref List<Asteroid> asteroids, ref List<Bullet> bullets, int bulletsAmount, int asteroidsAmount)
+        public void CheckBulletCollisions(ref Player rocket, ref List<Asteroid> asteroids, ref List<Bullet> bullets, ref List<Message> scores, int bulletsAmount, int asteroidsAmount, int addScore)
         {
             for (var i = 0; i < bulletsAmount; i++)
             {
@@ -42,6 +53,9 @@ namespace FlyMeToTheMoon
                     
                             if (bulletRect.IntersectsWith(asteroidRect))
                             {
+                                AddScore(ref scores, asteroids[j].GetX(), asteroids[j].GetY());
+                                rocket.IncHighScore(addScore);
+                                
                                 asteroids[j].SetExplosionStatus(true);
                                 asteroids[j].SetDrawingStatus(false);
                                 asteroids[j].SetExplosionTimer(0);

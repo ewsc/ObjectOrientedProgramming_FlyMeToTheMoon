@@ -53,7 +53,7 @@ namespace FlyMeToTheMoon
             {
                 if (!bonuses[i].GetDrawingStatus()) continue;
                 var g = Graphics.FromImage(back);
-                var explosion = Image.FromFile(resources + "bonus.png");
+                var explosion = Image.FromFile(resources + "bonus" + bonuses[i].GetBonusType() + ".png");
                 var point = new Point(bonuses[i].GetX(), bonuses[i].GetY());
                 g.DrawImage(explosion, point);
             }

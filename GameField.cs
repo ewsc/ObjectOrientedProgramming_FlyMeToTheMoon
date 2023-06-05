@@ -21,6 +21,7 @@ namespace FlyMeToTheMoon
         private const int BonusesAmount = 5;
         private const int BonusSpeed = 3;
         private const int BonusTypeMax = 6;
+        private const int AsteroidAddScore = 20;
         
         //LEVEL VARIABLES
         private int _moveSize = 9;
@@ -44,6 +45,7 @@ namespace FlyMeToTheMoon
         private readonly List<Size> _resolutions = new List<Size>();
         private Player _rocket = new Player();
         private List<Message> _gameNotifications = new List<Message>();
+        private List<Message> _scoresFallen = new List<Message>();
         
         private static System.Timers.Timer _aTimer;
         private int _lastFired;
@@ -302,7 +304,7 @@ namespace FlyMeToTheMoon
                 _bullets.Add(tempBullet);
             }    
         }
-
+        
         private Image DrawBackground()
         {
             var back = _rocket.GetResolution() == 0 ? Image.FromFile(Resources + "back.jpg") : Image.FromFile(Resources + "back" + _rocket.GetResolution() + ".jpg");
@@ -328,6 +330,7 @@ namespace FlyMeToTheMoon
             back = drawer.DrawAsteroids(back, ref _asteroids, AsteroidsAmount, Resources, MaxExplosionTime, ExplosionTimer);
             back = drawer.DrawBullets(back, ref _bullets, BulletsAmount, Resources);
             back = drawer.DrawBonuses(back, ref _bonuses, BonusesAmount, Resources);
+            back = CheckScores(back, 18);
             return back;
         }
 
@@ -483,17 +486,17 @@ namespace FlyMeToTheMoon
             }
             else if (bonusType == 5)
             {
-                _rocket.BonusSetHigh(10, true);
+                _rocket.BonusSetHigh(100, true);
                 var message = new Message();
                 message.SetPosition(10, Height - 100);
-                message.AddMessage("+10 SCORE", 100, ref _gameNotifications);
+                message.AddMessage("+100 SCORE", 100, ref _gameNotifications);
             }
             else if (bonusType == 6)
             {
-                _rocket.BonusSetHigh(10, false);
+                _rocket.BonusSetHigh(100, false);
                 var message = new Message();
                 message.SetPosition(10, Height - 100);
-                message.AddMessage("-10 SCORE", 100, ref _gameNotifications);
+                message.AddMessage("-100 SCORE", 100, ref _gameNotifications);
             }
         }
         
@@ -520,7 +523,7 @@ namespace FlyMeToTheMoon
 
             var collision = new CollisionChecker();
             collision.CheckRocketCollisions(ref _rocket, ref _asteroids, _healthDecRate, AsteroidsAmount);
-            collision.CheckBulletCollisions(ref _rocket, ref _asteroids, ref _bullets, BulletsAmount, AsteroidsAmount);
+            collision.CheckBulletCollisions(ref _rocket, ref _asteroids, ref _bullets, ref _scoresFallen, BulletsAmount, AsteroidsAmount, AsteroidAddScore);
             var bonusEffect = collision.CheckBonusCollision(ref _rocket, ref _bonuses, BonusesAmount);
 
             if (bonusEffect != -1)
@@ -531,13 +534,46 @@ namespace FlyMeToTheMoon
             MoveBullets();
             MoveAsteroids();
             MoveBonuses();
+            MoveScores();
             BackgroundImage = DrawBackground();
-            BackgroundImage = CheckMessages(BackgroundImage);
+            BackgroundImage = CheckMessages(BackgroundImage, ref _gameNotifications, 72);
         }
 
-        private Image CheckMessages(Image back)
+        private void MoveScores()
         {
-            foreach (var message in _gameNotifications)
+            foreach (var t in _scoresFallen)
+            {
+                t.IncY(BonusSpeed);
+                if (t.GetY() <= Height - 60)
+                {
+                    t.SetDrawingStatus(false);
+                }
+            }
+        }
+        
+        private Image CheckScores(Image back, int size)
+        {
+            for (var i = 0; i < _scoresFallen.Count; i++)
+            {
+                if (_scoresFallen[i].GetY() >= Height - 60)
+                {
+                    _scoresFallen.RemoveAt(i);
+                }
+                var g = Graphics.FromImage(back);
+                g.SmoothingMode = SmoothingMode.AntiAlias;
+                g.InterpolationMode = InterpolationMode.HighQualityBicubic;
+                g.PixelOffsetMode = PixelOffsetMode.HighQuality;
+                var textRect = new RectangleF(_scoresFallen[i].GetX(), _scoresFallen[i].GetY(), _scoresFallen[i].GetWidth(), _scoresFallen[i].GetHeight());
+                var outText = _scoresFallen[i].GetMessage();
+                g.DrawString(outText, new Font("hooge 05_55", size), Brushes.WhiteSmoke, textRect);
+                g.Flush();
+            }
+            return back;
+        }
+
+        private Image CheckMessages(Image back, ref List<Message> messages, int size)
+        {
+            foreach (var message in messages)
             {
                 if (!message.GetDrawingStatus()) continue;
                 if (message.GetDuration() <= 0)
@@ -551,7 +587,7 @@ namespace FlyMeToTheMoon
                 g.PixelOffsetMode = PixelOffsetMode.HighQuality;
                 var textRect = new RectangleF(message.GetX(), message.GetY(), message.GetWidth(), message.GetHeight());
                 var outText = message.GetMessage();
-                g.DrawString(outText, new Font("hooge 05_55",72), Brushes.WhiteSmoke, textRect);
+                g.DrawString(outText, new Font("hooge 05_55",size), Brushes.WhiteSmoke, textRect);
                 g.Flush();
                 break;
             }
