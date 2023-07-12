@@ -10,5 +10,5 @@
 
 <h5>
   <i>sorry for the shitcode</i><br>
-  <i><a href="https://www.youtube.com/watch?v=7hPtMXyHFQw">(evangelion reference?)</a></i>
+  <i><a href="https://www.youtube.com/watch?v=Ixi0sUpLVRc">(evangelion reference?)</a></i>
 </h5>
